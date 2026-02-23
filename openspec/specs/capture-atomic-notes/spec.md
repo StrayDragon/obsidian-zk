@@ -1,18 +1,21 @@
-## ADDED Requirements
+# capture-atomic-notes Specification
 
+## Purpose
+TBD - created by archiving change zettelkasten-workflow-wizard. Update Purpose after archive.
+## Requirements
 ### Requirement: Create atomic fleeting notes
-插件 MUST 提供命令创建“闪念笔记”原子文件，并将其标记为待处理（inbox）。
+插件 MUST 提供命令创建“闪念笔记（fleeting）”原子文件，并将其标记为收集箱（inbox）待处理状态。
 
 #### Scenario: Create a new fleeting note
-- **WHEN** 用户执行命令 `Zk: 1| 新建闪念笔记`
+- **WHEN** 用户执行命令 `1| 新建闪念笔记（fleeting）`
 - **THEN** 插件创建一个新的 Markdown 文件并在编辑器中打开
 - **THEN** 新文件的 frontmatter MUST 包含 `zk_type: fleeting` 与 `zk_status: inbox`
 
 ### Requirement: Create atomic literature notes
-插件 MUST 提供命令创建“文献笔记”原子文件，并将其标记为待处理（inbox）。
+插件 MUST 提供命令创建“文献笔记（literature）”原子文件，并将其标记为收集箱（inbox）待处理状态。
 
 #### Scenario: Create a new literature note
-- **WHEN** 用户执行命令 `Zk: 2| 新建文献笔记`
+- **WHEN** 用户执行命令 `2| 新建文献笔记（literature）`
 - **THEN** 插件创建一个新的 Markdown 文件并在编辑器中打开
 - **THEN** 新文件的 frontmatter MUST 包含 `zk_type: literature` 与 `zk_status: inbox`
 
@@ -31,3 +34,4 @@
 #### Scenario: Create in the configured default location
 - **WHEN** 用户执行创建笔记命令
 - **THEN** 插件创建的文件 MUST 位于 Obsidian 配置的默认新建文件目录（若未配置则位于 vault 根目录）
+

@@ -7,7 +7,7 @@ export async function newFleetingNote(plugin: ZkWorkflowWizardPlugin) {
 		await createAtomicNote(plugin, "fleeting");
 	} catch (error) {
 		console.error(error);
-		new Notice("创建闪念笔记失败，请查看控制台。");
+		new Notice("创建闪念笔记（fleeting）失败，请查看控制台。");
 	}
 }
 
@@ -16,7 +16,6 @@ export async function newLiteratureNote(plugin: ZkWorkflowWizardPlugin) {
 		await createAtomicNote(plugin, "literature");
 	} catch (error) {
 		console.error(error);
-		new Notice("创建文献笔记失败，请查看控制台。");
+		new Notice("创建文献笔记（literature）失败，请查看控制台。");
 	}
 }
-

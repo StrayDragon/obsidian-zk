@@ -1,5 +1,6 @@
 import {App, PluginSettingTab, Setting} from "obsidian";
 import ZkWorkflowWizardPlugin from "./main";
+import {getZkFieldLabel, getZkStatusLabel, getZkTypeLabel} from "./utils/zk-labels";
 
 export interface ZkPluginSettings {
 	relatedSectionHeading: string;
@@ -43,7 +44,9 @@ export class ZkSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("写入 zk/* 标签")
-			.setDesc("启用后创建/处理笔记时会写入辅助标签（例如 #zk/inbox）。")
+			.setDesc(
+				`启用后创建/处理笔记时会写入辅助标签（例如 #zk/inbox 对应 ${getZkFieldLabel("status")} = ${getZkStatusLabel("inbox")}；#zk/permanent 对应 ${getZkFieldLabel("type")} = ${getZkTypeLabel("permanent")}）。`,
+			)
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.writeZkTags).onChange(async (value) => {
 					this.plugin.settings.writeZkTags = value;

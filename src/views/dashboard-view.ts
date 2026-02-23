@@ -3,6 +3,7 @@ import type ZkWorkflowWizardPlugin from "../main";
 import {InboxModal} from "../ui/inbox-modal";
 import {ProcessWizardModal} from "../ui/process-wizard-modal";
 import {AssignZkIdModal} from "../ui/assign-zk-id-modal";
+import {getZkFieldLabel, getZkStatusLabel, getZkTypeLabel} from "../utils/zk-labels";
 
 export const ZK_DASHBOARD_VIEW_TYPE = "zk-dashboard";
 
@@ -37,7 +38,7 @@ export class ZkDashboardView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "Zk 概览";
+		return "Zk 概览（dashboard）";
 	}
 
 	getIcon(): string {
@@ -117,7 +118,7 @@ export class ZkDashboardView extends ItemView {
 		this.contentEl.addClass("zk-dashboard");
 
 		const header = this.contentEl.createDiv({cls: "zk-dashboard-header"});
-		header.createEl("h2", {text: "Zk 概览"});
+		header.createEl("h2", {text: "Zk 概览（dashboard）"});
 		const headerRight = header.createDiv({cls: "zk-dashboard-headerRight"});
 		headerRight.createDiv({
 			cls: "zk-dashboard-updated",
@@ -150,19 +151,19 @@ export class ZkDashboardView extends ItemView {
 		new Setting(quick)
 			.setName("快捷操作")
 			.addButton((btn) =>
-				btn.setButtonText("打开收集箱").onClick(() => {
+				btn.setButtonText(`打开${getZkStatusLabel("inbox")}`).onClick(() => {
 					new InboxModal(this.plugin).open();
 				}),
 			)
 			.addButton((btn) =>
-				btn.setButtonText("处理下一条").onClick(() => {
+				btn.setButtonText(`处理下一条 · ${getZkStatusLabel("inbox")}`).onClick(() => {
 					const first = index.getInboxItems()[0]?.file;
 					if (!first) return;
 					new ProcessWizardModal(this.plugin, first).open();
 				}),
 			)
 			.addButton((btn) =>
-				btn.setButtonText("处理当前").onClick(() => {
+				btn.setButtonText(`处理当前笔记 · 升级为${getZkTypeLabel("permanent")}`).onClick(() => {
 					const file = this.plugin.app.workspace.getActiveFile();
 					if (!file) return;
 					new ProcessWizardModal(this.plugin, file).open();
@@ -173,35 +174,35 @@ export class ZkDashboardView extends ItemView {
 
 		const statsGrid = this.contentEl.createDiv({cls: "zk-dashboard-grid"});
 		this.createCard(statsGrid, {
-			title: "收集箱",
+			title: getZkStatusLabel("inbox"),
 			value: String(byStatus.inbox ?? 0),
 			subtitle: "点击查看列表",
 			onClick: () => this.showPanel("inbox"),
 		});
-		this.createCard(statsGrid, {title: "永久笔记", value: String(byType.permanent ?? 0)});
-		this.createCard(statsGrid, {title: "文献笔记", value: String(byType.literature ?? 0)});
-		this.createCard(statsGrid, {title: "闪念笔记", value: String(byType.fleeting ?? 0)});
-		this.createCard(statsGrid, {title: "已归档", value: String(byStatus.archived ?? 0)});
+		this.createCard(statsGrid, {title: getZkTypeLabel("permanent"), value: String(byType.permanent ?? 0)});
+		this.createCard(statsGrid, {title: getZkTypeLabel("literature"), value: String(byType.literature ?? 0)});
+		this.createCard(statsGrid, {title: getZkTypeLabel("fleeting"), value: String(byType.fleeting ?? 0)});
+		this.createCard(statsGrid, {title: getZkStatusLabel("archived"), value: String(byStatus.archived ?? 0)});
 
 		this.contentEl.createEl("h3", {text: "数据健康"});
 
 		const healthGrid = this.contentEl.createDiv({cls: "zk-dashboard-grid"});
 		this.createCard(healthGrid, {
-			title: "永久缺卡片 ID",
+			title: `${getZkTypeLabel("permanent")}缺${getZkFieldLabel("id")}`,
 			value: String(permanentMissingId.length),
 			subtitle: "点击查看列表",
 			mod: permanentMissingId.length > 0 ? "warning" : undefined,
 			onClick: () => this.showPanel("missing-id"),
 		});
 		this.createCard(healthGrid, {
-			title: "文献缺来源",
+			title: `${getZkTypeLabel("literature")}缺${getZkFieldLabel("source")}`,
 			value: String(literatureMissingSource.length),
 			subtitle: "点击查看列表",
 			mod: literatureMissingSource.length > 0 ? "warning" : undefined,
 			onClick: () => this.showPanel("missing-source"),
 		});
 		this.createCard(healthGrid, {
-			title: "卡片 ID 冲突组数",
+			title: `${getZkFieldLabel("id")}冲突组数`,
 			value: String(duplicateIdGroups.length),
 			subtitle: "点击查看冲突组",
 			mod: duplicateIdGroups.length > 0 ? "danger" : undefined,
@@ -216,14 +217,14 @@ export class ZkDashboardView extends ItemView {
 		const inboxPanel = panels.createEl("details", {cls: "zk-dashboard-panel"});
 		panelEls["inbox"] = inboxPanel;
 		inboxPanel.createEl("summary", {
-			text: `收集箱（inbox）：${byStatus.inbox ?? 0} 条`,
+			text: `${getZkStatusLabel("inbox")}：${byStatus.inbox ?? 0} 条`,
 		});
 		inboxPanel.open = this.activePanel === "inbox";
 		{
 			const content = inboxPanel.createDiv({cls: "zk-dashboard-panelBody"});
 			const inboxItems = index.getInboxItems();
 			if (inboxItems.length === 0) {
-				content.createEl("p", {text: "收集箱为空。"});
+				content.createEl("p", {text: `${getZkStatusLabel("inbox")}为空。`});
 			} else {
 				for (const note of inboxItems.slice(0, 20)) {
 					new Setting(content)
@@ -238,18 +239,20 @@ export class ZkDashboardView extends ItemView {
 					content.createEl("p", {text: "仅显示前 20 条。"});
 				}
 			}
-			new Setting(content).addButton((btn) => btn.setButtonText("打开收集箱").onClick(() => new InboxModal(this.plugin).open()));
+			new Setting(content).addButton((btn) =>
+				btn.setButtonText(`打开${getZkStatusLabel("inbox")}`).onClick(() => new InboxModal(this.plugin).open()),
+			);
 		}
 
 		const missingIdPanel = panels.createEl("details", {cls: "zk-dashboard-panel"});
 		panelEls["missing-id"] = missingIdPanel;
 		missingIdPanel.createEl("summary", {
-			text: `永久缺卡片 ID：${permanentMissingId.length} 条`,
+			text: `${getZkTypeLabel("permanent")}缺${getZkFieldLabel("id")}：${permanentMissingId.length} 条`,
 		});
 		missingIdPanel.open = this.activePanel === "missing-id";
 		{
 			const content = missingIdPanel.createDiv({cls: "zk-dashboard-panelBody"});
-			content.createEl("p", {text: "提示：点击打开，或直接分配卡片 ID。"});
+			content.createEl("p", {text: `提示：点击打开，或直接分配${getZkFieldLabel("id")}。`});
 
 			if (permanentMissingId.length === 0) {
 				content.createEl("p", {text: "没有发现问题。"});
@@ -272,12 +275,14 @@ export class ZkDashboardView extends ItemView {
 		const missingSourcePanel = panels.createEl("details", {cls: "zk-dashboard-panel"});
 		panelEls["missing-source"] = missingSourcePanel;
 		missingSourcePanel.createEl("summary", {
-			text: `文献缺来源：${literatureMissingSource.length} 条`,
+			text: `${getZkTypeLabel("literature")}缺${getZkFieldLabel("source")}：${literatureMissingSource.length} 条`,
 		});
 		missingSourcePanel.open = this.activePanel === "missing-source";
 		{
 			const content = missingSourcePanel.createDiv({cls: "zk-dashboard-panelBody"});
-			content.createEl("p", {text: "建议：为文献笔记补齐 zk_source，方便后续检索与召回。"});
+			content.createEl("p", {
+				text: `建议：为${getZkTypeLabel("literature")}补齐${getZkFieldLabel("source")}，方便后续检索与召回。`,
+			});
 
 			if (literatureMissingSource.length === 0) {
 				content.createEl("p", {text: "没有发现问题。"});
@@ -297,19 +302,19 @@ export class ZkDashboardView extends ItemView {
 		const duplicateIdsPanel = panels.createEl("details", {cls: "zk-dashboard-panel"});
 		panelEls["duplicate-ids"] = duplicateIdsPanel;
 		duplicateIdsPanel.createEl("summary", {
-			text: `卡片 ID 冲突：${duplicateIdGroups.length} 组`,
+			text: `${getZkFieldLabel("id")}冲突：${duplicateIdGroups.length} 组`,
 		});
 		duplicateIdsPanel.open = this.activePanel === "duplicate-ids";
 		{
 			const content = duplicateIdsPanel.createDiv({cls: "zk-dashboard-panelBody"});
-			content.createEl("p", {text: "同一卡片 ID 被多个文件使用会影响链式组织与召回。"});
+			content.createEl("p", {text: `同一${getZkFieldLabel("id")}被多个文件使用会影响链式组织与召回。`});
 
 			if (duplicateIdGroups.length === 0) {
 				content.createEl("p", {text: "没有发现问题。"});
 			} else {
 				for (const group of duplicateIdGroups.slice(0, 20)) {
 					const groupEl = content.createEl("details");
-					groupEl.createEl("summary", {text: `卡片 ID：${group.zkId}（${group.files.length}）`});
+					groupEl.createEl("summary", {text: `${getZkFieldLabel("id")}：${group.zkId}（${group.files.length}）`});
 					for (const file of group.files) {
 						new Setting(groupEl)
 							.setName(file.basename)

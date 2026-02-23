@@ -1,6 +1,7 @@
 import {ItemView, Setting, type TFile, type WorkspaceLeaf} from "obsidian";
 import type ZkWorkflowWizardPlugin from "../main";
 import {getEffectiveZkStatus, getEffectiveZkType, getUserTags} from "../services/zk-classify";
+import {getZkFieldLabel, getZkStatusLabel, getZkTypeLabel} from "../utils/zk-labels";
 import {
 	computeUserTagCounts,
 	filterEntriesForTagFacets,
@@ -33,23 +34,6 @@ const TYPE_ORDER: Array<ZkType | "unknown"> = [
 	"unknown",
 ];
 
-function getTypeLabel(type: ZkType | "unknown"): string {
-	switch (type) {
-		case "permanent":
-			return "永久";
-		case "literature":
-			return "文献";
-		case "fleeting":
-			return "闪念";
-		case "index":
-			return "索引";
-		case "project":
-			return "项目";
-		default:
-			return "未标记";
-	}
-}
-
 function openFile(plugin: ZkWorkflowWizardPlugin, file: TFile) {
 	void plugin.app.workspace.getLeaf(false).openFile(file);
 }
@@ -64,8 +48,8 @@ function isZkRelevant(note: ZkIndexedNote): boolean {
 
 function buildEntryDesc(entry: LibraryEntry<TFile>): string {
 	const parts: string[] = [];
-	if (entry.zkId) parts.push(`卡片 ID ${entry.zkId}`);
-	if (entry.zkSource) parts.push(`来源 ${entry.zkSource}`);
+	if (entry.zkId) parts.push(`${getZkFieldLabel("id")}：${entry.zkId}`);
+	if (entry.zkSource) parts.push(`${getZkFieldLabel("source")}：${entry.zkSource}`);
 	if (entry.userTags.length > 0) {
 		const preview = entry.userTags.slice(0, 3).map((t) => `#${t}`).join(" ");
 		parts.push(preview);
@@ -130,7 +114,7 @@ export class ZkLibraryIndexView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "图书馆索引";
+		return "图书馆索引（library index）";
 	}
 
 	getIcon(): string {
@@ -171,7 +155,7 @@ export class ZkLibraryIndexView extends ItemView {
 
 	private buildSkeleton() {
 		const header = this.contentEl.createDiv({cls: "zk-library-header"});
-		header.createEl("h2", {text: "图书馆索引"});
+		header.createEl("h2", {text: "图书馆索引（library index）"});
 
 		const headerRight = header.createDiv({cls: "zk-library-headerRight"});
 		this.updatedEl = headerRight.createDiv({cls: "zk-library-updated"});
@@ -191,7 +175,7 @@ export class ZkLibraryIndexView extends ItemView {
 			cls: "zk-library-input",
 			attr: {
 				type: "search",
-				placeholder: "搜索文件名、卡片 ID、来源或标签…",
+				placeholder: `搜索文件名、${getZkFieldLabel("id")}、${getZkFieldLabel("source")}或标签（tags）…`,
 				"aria-label": "搜索",
 			},
 		});
@@ -201,19 +185,19 @@ export class ZkLibraryIndexView extends ItemView {
 		});
 
 		const typeWrap = filters.createDiv({cls: "zk-library-filter"});
-		typeWrap.createDiv({cls: "zk-library-filterLabel", text: "类型"});
+		typeWrap.createDiv({cls: "zk-library-filterLabel", text: getZkFieldLabel("type")});
 		this.typeSelect = typeWrap.createEl("select", {
 			cls: "zk-library-select",
 			attr: {"aria-label": "类型"},
 		});
 		const typeOptions: Array<{value: string; label: string}> = [
 			{value: "all", label: "全部"},
-			{value: "permanent", label: "永久"},
-			{value: "literature", label: "文献"},
-			{value: "fleeting", label: "闪念"},
-			{value: "index", label: "索引"},
-			{value: "project", label: "项目"},
-			{value: "unknown", label: "未标记"},
+			{value: "permanent", label: getZkTypeLabel("permanent")},
+			{value: "literature", label: getZkTypeLabel("literature")},
+			{value: "fleeting", label: getZkTypeLabel("fleeting")},
+			{value: "index", label: getZkTypeLabel("index")},
+			{value: "project", label: getZkTypeLabel("project")},
+			{value: "unknown", label: getZkTypeLabel("unknown")},
 		];
 		for (const option of typeOptions) {
 			this.typeSelect.createEl("option", {value: option.value, text: option.label});
@@ -224,18 +208,18 @@ export class ZkLibraryIndexView extends ItemView {
 		});
 
 		const statusWrap = filters.createDiv({cls: "zk-library-filter"});
-		statusWrap.createDiv({cls: "zk-library-filterLabel", text: "状态"});
+		statusWrap.createDiv({cls: "zk-library-filterLabel", text: getZkFieldLabel("status")});
 		this.statusSelect = statusWrap.createEl("select", {
 			cls: "zk-library-select",
 			attr: {"aria-label": "状态"},
 		});
 		const statusOptions: Array<{value: string; label: string}> = [
 			{value: "all", label: "全部"},
-			{value: "inbox", label: "收集箱"},
-			{value: "processing", label: "处理中"},
-			{value: "done", label: "已完成"},
-			{value: "archived", label: "已归档"},
-			{value: "unknown", label: "未标记"},
+			{value: "inbox", label: getZkStatusLabel("inbox")},
+			{value: "processing", label: getZkStatusLabel("processing")},
+			{value: "done", label: getZkStatusLabel("done")},
+			{value: "archived", label: getZkStatusLabel("archived")},
+			{value: "unknown", label: getZkStatusLabel("unknown")},
 		];
 		for (const option of statusOptions) {
 			this.statusSelect.createEl("option", {value: option.value, text: option.label});
@@ -246,12 +230,12 @@ export class ZkLibraryIndexView extends ItemView {
 		});
 
 		const tagWrap = filters.createDiv({cls: "zk-library-filter"});
-		tagWrap.createDiv({cls: "zk-library-filterLabel", text: "标签"});
+		tagWrap.createDiv({cls: "zk-library-filterLabel", text: "标签（tags）"});
 		this.tagSelect = tagWrap.createEl("select", {
 			cls: "zk-library-select",
 			attr: {"aria-label": "标签"},
 		});
-		this.tagSelect.createEl("option", {value: "all", text: "全部标签"});
+		this.tagSelect.createEl("option", {value: "all", text: "全部标签（tags）"});
 		this.tagSelect.addEventListener("change", () => {
 			const value = this.tagSelect?.value ?? "all";
 			this.tagFilter = value === "all" ? undefined : value;
@@ -381,8 +365,8 @@ export class ZkLibraryIndexView extends ItemView {
 			});
 
 			const inboxCount = groupEntries.filter((e) => e.effectiveStatus === "inbox").length;
-			const summaryParts = [`${getTypeLabel(groupType)}（${groupEntries.length}）`];
-			if (inboxCount > 0) summaryParts.push(`收集箱 ${inboxCount}`);
+			const summaryParts = [`${getZkTypeLabel(groupType)}（${groupEntries.length}）`];
+			if (inboxCount > 0) summaryParts.push(`${getZkStatusLabel("inbox")} ${inboxCount}`);
 			details.createEl("summary", {text: summaryParts.join(" · ")});
 
 			const body = details.createDiv({cls: "zk-library-groupBody"});
@@ -431,7 +415,7 @@ export class ZkLibraryIndexView extends ItemView {
 		const selectedCount = selected === "all" ? undefined : tagCounts.find((t) => t.tag === selected)?.count ?? 0;
 
 		this.tagSelect.empty();
-		this.tagSelect.createEl("option", {value: "all", text: "全部标签"});
+		this.tagSelect.createEl("option", {value: "all", text: "全部标签（tags）"});
 		for (const {tag, count} of top) {
 			this.tagSelect.createEl("option", {value: tag, text: `${tag}（${count}）`});
 		}

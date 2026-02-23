@@ -5,6 +5,7 @@ import {ProcessWizardModal} from "../ui/process-wizard-modal";
 import {AssignZkIdModal} from "../ui/assign-zk-id-modal";
 import {ZK_DASHBOARD_VIEW_TYPE} from "../views/dashboard-view";
 import {ZK_LIBRARY_INDEX_VIEW_TYPE} from "../views/library-index-view";
+import {getZkStatusLabel} from "../utils/zk-labels";
 
 export function openInbox(plugin: ZkWorkflowWizardPlugin) {
 	new InboxModal(plugin).open();
@@ -28,7 +29,7 @@ export async function processNextInboxItem(plugin: ZkWorkflowWizardPlugin) {
 		const items = index.getInboxItems();
 		const next = items[0]?.file;
 		if (!next) {
-			new Notice("收集箱为空。");
+			new Notice(`${getZkStatusLabel("inbox")}为空。`);
 			return;
 		}
 		new ProcessWizardModal(plugin, next).open();

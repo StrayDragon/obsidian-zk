@@ -3,20 +3,8 @@ import type ZkWorkflowWizardPlugin from "../main";
 import {generateTopLevelZkId, generateZkIdAfterAnchor} from "../services/zk-id";
 import {promoteToPermanent, setZkStatus} from "../services/zk-frontmatter";
 import {upsertRelatedLinksSection} from "../services/related-links";
+import {getZkFieldLabel, getZkStatusLabel, getZkTypeLabel} from "../utils/zk-labels";
 import {FileSuggestModal} from "./suggest/file-suggest-modal";
-
-function getTypeLabel(type?: string): string {
-	switch (type) {
-		case "fleeting":
-			return "闪念";
-		case "literature":
-			return "文献";
-		case "permanent":
-			return "永久";
-		default:
-			return "未标记";
-	}
-}
 
 export class ProcessWizardModal extends Modal {
 	private anchorFile?: TFile;
@@ -40,28 +28,30 @@ export class ProcessWizardModal extends Modal {
 
 	private async render() {
 		this.contentEl.empty();
-		this.contentEl.createEl("h2", {text: "处理向导"});
+		this.contentEl.createEl("h2", {text: "处理向导（process wizard）"});
 		this.contentEl.createEl("p", {text: `目标：${this.file.basename}`});
 
 		const index = await this.plugin.getIndex();
 		const note = index.getNote(this.file);
 
-		const typeLabel = getTypeLabel(note?.zkType);
-		const status = note?.zkStatus ?? "未标记";
-		this.contentEl.createEl("p", {text: `类型：${typeLabel}；状态：${status}`});
+		const typeLabel = getZkTypeLabel(note?.zkType);
+		const statusLabel = getZkStatusLabel(note?.zkStatus);
+		this.contentEl.createEl("p", {
+			text: `${getZkFieldLabel("type")}：${typeLabel}；${getZkFieldLabel("status")}：${statusLabel}`,
+		});
 
 		if (note?.zkStatus !== "inbox") {
 			this.contentEl.createEl("p", {
-				text: "提示：当前文件未标记为收集箱（inbox）笔记。你仍然可以将其标记为 inbox 后再继续。",
+				text: `提示：当前文件的${getZkFieldLabel("status")}不是 ${getZkStatusLabel("inbox")}。你仍然可以将其标记为 ${getZkStatusLabel("inbox")} 后再继续。`,
 			});
 			new Setting(this.contentEl).addButton((btn) =>
-				btn.setButtonText("标记为 inbox").onClick(() => {
+				btn.setButtonText(`标记为 ${getZkStatusLabel("inbox")}`).onClick(() => {
 					void this.markAsInbox();
 				}),
 			);
 		}
 
-		this.contentEl.createEl("h3", {text: "1) 分配卡片 ID"});
+		this.contentEl.createEl("h3", {text: `1) 分配${getZkFieldLabel("id")}`});
 
 		const currentZkId = note?.zkId ?? "";
 		if (!this.zkId) this.zkId = currentZkId;
@@ -87,11 +77,11 @@ export class ProcessWizardModal extends Modal {
 			);
 
 		new Setting(this.contentEl)
-			.setName("卡片 ID（可编辑）")
+			.setName("卡片 ID（zk_id，可编辑）")
 			.setDesc(
 				conflicts.length > 0
 					? `冲突：${conflicts.map((f) => f.path).join(", ")}`
-					: "将写入 frontmatter 的卡片 ID 字段（不会写入标题/正文）。",
+					: "将写入 frontmatter 的 zk_id 字段（不会写入标题/正文）。",
 			)
 			.addText((text) =>
 				text.setValue(this.zkId).onChange((value) => {
@@ -147,7 +137,7 @@ export class ProcessWizardModal extends Modal {
 
 		this.contentEl.createEl("h3", {text: "3) 完成升级"});
 		this.contentEl.createEl("p", {
-			text: "插件不会替你改写正文内容；只会写入 frontmatter（zk_* 字段）与维护“## 关联”链接段。",
+			text: "插件不会替你改写正文内容；只会写入 frontmatter（zk_type/zk_status/zk_id 等字段）与维护“## 关联”链接段。",
 		});
 
 		const canFinalize = this.zkId.trim() !== "" && conflicts.length === 0;
@@ -171,7 +161,7 @@ export class ProcessWizardModal extends Modal {
 			await setZkStatus(this.plugin, this.file, "inbox");
 			const index = await this.plugin.getIndex();
 			index.refreshFile(this.file);
-			new Notice("已标记为 inbox。");
+			new Notice(`${getZkFieldLabel("status")}已更新为 ${getZkStatusLabel("inbox")}。`);
 			void this.render();
 		} catch (error) {
 			console.error(error);
@@ -193,15 +183,15 @@ export class ProcessWizardModal extends Modal {
 					this.anchorFile = file;
 					const anchorId = index.getNote(file)?.zkId;
 					if (!anchorId) {
-						new Notice("所选锚点没有卡片 ID。");
+						new Notice(`所选锚点没有${getZkFieldLabel("id")}。`);
 						return;
 					}
 					this.zkId = generateZkIdAfterAnchor(anchorId, index, this.file.path);
 					void this.render();
 				},
 				{
-					placeholder: "选择锚点卡片（已有卡片 ID）…",
-					emptyStateText: "没有可用的锚点卡片",
+					placeholder: "选择锚点卡片（已有 zk_id）…",
+					emptyStateText: "没有可用的锚点卡片（zk_id）",
 				},
 			).open();
 	}
@@ -229,14 +219,14 @@ export class ProcessWizardModal extends Modal {
 		const desiredId = this.zkId.trim();
 
 		if (!desiredId) {
-			new Notice("卡片 ID 不能为空。");
+			new Notice("卡片 ID（zk_id）不能为空。");
 			return;
 		}
 
 		const conflicts = index.getZkIdConflicts(desiredId, this.file.path);
 		if (conflicts.length > 0) {
 			const first = conflicts[0];
-			new Notice(`卡片 ID 冲突：${first ? first.path : "未知"}`);
+			new Notice(`卡片 ID（zk_id）冲突：${first ? first.path : "未知"}`);
 			return;
 		}
 
@@ -252,7 +242,9 @@ export class ProcessWizardModal extends Modal {
 			);
 
 			index.refreshFile(this.file);
-			new Notice("已升级为永久笔记。");
+			new Notice(
+				`已升级为${getZkTypeLabel("permanent")}；${getZkFieldLabel("status")}已更新为 ${getZkStatusLabel("done")}。`,
+			);
 			this.close();
 		} catch (error) {
 			console.error(error);
