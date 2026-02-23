@@ -1,8 +1,8 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsidian-zk",
 	"private": true,
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Zettelkasten workflow wizard for Obsidian.",
 	"main": "main.js",
 	"type": "module",
 	"engines": {
@@ -13,7 +13,7 @@
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint .",
-		"vault:dev": "node scripts/vault.mjs link && npm run dev"
+		"vault:dev": "node scripts/vault-dev.mjs"
 	},
 	"keywords": [],
 	"license": "0-BSD",
