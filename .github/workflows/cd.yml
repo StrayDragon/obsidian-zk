@@ -1,0 +1,69 @@
+name: CD
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  PLUGIN_NAME: obsidian-zk
+  TAG: ${{ github.ref_name }}
+
+jobs:
+  release-plugin:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies and build
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - name: Package
+        run: |
+          if [[ "$TAG" != v* ]]; then
+            echo "Tag ($TAG) must start with v (e.g. v1.2.3)"
+            exit 1
+          fi
+
+          MANIFEST_VERSION="$(node -e "console.log(JSON.parse(require('fs').readFileSync('manifest.json','utf8')).version)")"
+          TAG_VERSION="${TAG#v}"
+          if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
+            echo "Tag ($TAG) must match manifest.json version (vX.Y.Z vs X.Y.Z)"
+            exit 1
+          fi
+
+          mkdir -p output/${{ env.PLUGIN_NAME }}
+          cp main.js manifest.json output/${{ env.PLUGIN_NAME }}/
+          if [ -f styles.css ]; then cp styles.css output/${{ env.PLUGIN_NAME }}/; fi
+          if [ -f README.md ]; then cp README.md output/${{ env.PLUGIN_NAME }}/; fi
+
+          (cd output && zip -r ../${{ env.PLUGIN_NAME }}-${{ env.TAG }}.zip ${{ env.PLUGIN_NAME }})
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          draft: false
+          files: |
+            output/${{ env.PLUGIN_NAME }}/*
+            ${{ env.PLUGIN_NAME }}-${{ env.TAG }}.zip
