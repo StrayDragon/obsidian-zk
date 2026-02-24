@@ -47,8 +47,8 @@ function usage() {
 		"  node scripts/vault.mjs link --vault <vaultPath> [--copy] [--obsidian-dir <dir>]",
 		"",
 		"Examples:",
-		'  npm run vault:install -- --vault "/path/to/Vault"',
 		'  VAULT="/path/to/Vault" npm run vault:dev',
+		'  npm run vault:dev -- --vault "/path/to/Vault"',
 		"",
 		"Notes:",
 		"  - Default Obsidian config dir is .obsidian (override with --obsidian-dir).",
@@ -73,9 +73,12 @@ async function safeRemove(p) {
 	}
 }
 
-async function linkOrCopy({src, dest, copy}) {
-	if (!(await pathExists(src))) {
-		throw new Error(`Source file not found: ${src}`);
+async function linkOrCopy({src, dest, copy, requireSource}) {
+	const exists = await pathExists(src);
+	if (!exists) {
+		if (copy || requireSource) {
+			throw new Error(`Source file not found: ${src}`);
+		}
 	}
 
 	const destStat = await fs.lstat(dest).catch(() => null);
@@ -129,9 +132,11 @@ async function main() {
 	await fs.mkdir(pluginDir, {recursive: true});
 
 	const linkPlan = [
-		{file: "manifest.json", optional: false},
+		{file: "manifest.json", optional: false, requireSource: true},
 		{file: "styles.css", optional: true},
-		{file: "main.js", optional: false},
+		// Allow linking main.js even if it does not exist yet. This makes `npm run vault:dev`
+		// work from a clean repo before the first esbuild output is produced.
+		{file: "main.js", optional: false, requireSource: args.copy === true},
 	];
 
 	const created = [];
@@ -142,7 +147,12 @@ async function main() {
 		if (entry.optional && !(await pathExists(src))) continue;
 
 		try {
-			await linkOrCopy({src, dest, copy: args.copy === true});
+			await linkOrCopy({
+				src,
+				dest,
+				copy: args.copy === true,
+				requireSource: entry.requireSource === true,
+			});
 			created.push(entry.file);
 		} catch (error) {
 			console.error(error);
@@ -159,7 +169,10 @@ async function main() {
 
 	console.log(`Linked into vault plugin dir: ${pluginDir}`);
 	console.log(`Files: ${created.join(", ")}`);
+
+	if (!(await pathExists(path.join(repoRoot, "main.js")))) {
+		console.log("Note: main.js does not exist yet. Start the build/watch to generate it.");
+	}
 }
 
 await main();
-
