@@ -4,6 +4,7 @@ import {InboxModal} from "../ui/inbox-modal";
 import {ProcessWizardModal} from "../ui/process-wizard-modal";
 import {AssignZkIdModal} from "../ui/assign-zk-id-modal";
 import {ZK_DASHBOARD_VIEW_TYPE} from "../views/dashboard-view";
+import {ZK_LIBRARY_INDEX_VIEW_TYPE} from "../views/library-index-view";
 
 export function openInbox(plugin: ZkWorkflowWizardPlugin) {
 	new InboxModal(plugin).open();
@@ -12,6 +13,12 @@ export function openInbox(plugin: ZkWorkflowWizardPlugin) {
 export async function openDashboard(plugin: ZkWorkflowWizardPlugin) {
 	const leaf = plugin.app.workspace.getLeaf("tab");
 	await leaf.setViewState({type: ZK_DASHBOARD_VIEW_TYPE, active: true});
+	await plugin.app.workspace.revealLeaf(leaf);
+}
+
+export async function openLibraryIndex(plugin: ZkWorkflowWizardPlugin) {
+	const leaf = plugin.app.workspace.getLeaf("tab");
+	await leaf.setViewState({type: ZK_LIBRARY_INDEX_VIEW_TYPE, active: true});
 	await plugin.app.workspace.revealLeaf(leaf);
 }
 
