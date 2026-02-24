@@ -2,6 +2,7 @@ import {Plugin} from "obsidian";
 import {registerCommands} from "./commands/register";
 import {DEFAULT_SETTINGS, ZkSettingTab, type ZkPluginSettings} from "./settings";
 import {ZkIndex} from "./services/zk-index";
+import {registerViews} from "./views/register";
 
 export default class ZkWorkflowWizardPlugin extends Plugin {
 	settings: ZkPluginSettings = {...DEFAULT_SETTINGS};
@@ -10,6 +11,7 @@ export default class ZkWorkflowWizardPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
+		registerViews(this);
 		registerCommands(this);
 		this.addSettingTab(new ZkSettingTab(this.app, this));
 	}

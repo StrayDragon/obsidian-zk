@@ -1,6 +1,12 @@
 import type ZkWorkflowWizardPlugin from "../main";
 import {newFleetingNote, newLiteratureNote} from "./capture";
-import {assignZkIdCurrentNote, openInbox, processCurrentNote, processNextInboxItem} from "./workflow";
+import {
+	assignZkIdCurrentNote,
+	openDashboard,
+	openInbox,
+	processCurrentNote,
+	processNextInboxItem,
+} from "./workflow";
 
 export function registerCommands(plugin: ZkWorkflowWizardPlugin) {
 	plugin.addCommand({
@@ -19,6 +25,12 @@ export function registerCommands(plugin: ZkWorkflowWizardPlugin) {
 		id: "zk-open-inbox",
 		name: "Zk: 3| 打开收集箱",
 		callback: () => openInbox(plugin),
+	});
+
+	plugin.addCommand({
+		id: "zk-open-dashboard",
+		name: "Zk: 概览 - 统计面板",
+		callback: () => void openDashboard(plugin),
 	});
 
 	plugin.addCommand({

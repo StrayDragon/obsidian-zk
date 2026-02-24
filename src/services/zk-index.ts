@@ -85,6 +85,25 @@ export class ZkIndex {
 			});
 	}
 
+	getAllNotes(): ZkIndexedNote[] {
+		return [...this.notesByPath.values()];
+	}
+
+	getDuplicateZkIdGroups(): Array<{zkId: string; files: TFile[]}> {
+		const groups: Array<{zkId: string; files: TFile[]}> = [];
+		for (const [zkId, paths] of this.zkIdToPaths.entries()) {
+			if (paths.size <= 1) continue;
+			const files: TFile[] = [];
+			for (const path of paths) {
+				const note = this.notesByPath.get(path);
+				if (note) files.push(note.file);
+			}
+			groups.push({zkId, files});
+		}
+
+		return groups.sort((a, b) => a.zkId.localeCompare(b.zkId));
+	}
+
 	getNote(file: TFile): ZkIndexedNote | undefined {
 		return this.notesByPath.get(file.path);
 	}
@@ -222,4 +241,3 @@ export class ZkIndex {
 		}
 	}
 }
-
