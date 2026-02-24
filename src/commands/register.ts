@@ -3,6 +3,7 @@ import {newFleetingNote, newLiteratureNote} from "./capture";
 import {
 	assignZkIdCurrentNote,
 	openDashboard,
+	openLibraryIndex,
 	openInbox,
 	processCurrentNote,
 	processNextInboxItem,
@@ -31,6 +32,12 @@ export function registerCommands(plugin: ZkWorkflowWizardPlugin) {
 		id: "zk-open-dashboard",
 		name: "概览 | 统计面板",
 		callback: () => void openDashboard(plugin),
+	});
+
+	plugin.addCommand({
+		id: "zk-open-library-index",
+		name: "索引 | 图书馆索引",
+		callback: () => void openLibraryIndex(plugin),
 	});
 
 	plugin.addCommand({
