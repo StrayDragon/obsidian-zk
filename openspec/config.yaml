@@ -1,20 +1,39 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Project: Obsidian Community Plugin (TypeScript -> bundled JS loaded by Obsidian)
+  Repo conventions:
+    - Package manager: npm
+    - Bundler: esbuild (entry: src/main.ts, output: main.js)
+    - Keep src/main.ts minimal (lifecycle + registrations only); split features into modules under src/
+    - Do not add/commit build artifacts (main.js, node_modules/)
+  Product: “Zettelkasten workflow wizard” for learning and practicing 卡片盒笔记法 in Obsidian.
+  Core workflow (Plan A):
+    - Notes are atomic files (one idea / one quote per file)
+    - Use frontmatter (not folders) as source of truth; tags are optional helpers
+    - In-place promotion: fleeting/literature notes are processed and upgraded in the same file to permanent notes
+  Minimal data model (frontmatter):
+    - zk_type: fleeting | literature | permanent | index | project
+    - zk_status: inbox | processing | done | archived
+    - zk_id: Luhmann-style branched ID (frontmatter only; never in title/body)
+    - zk_source: optional source string (literature/permanent)
+  UX constraints:
+    - Desktop-first; mobile only needs core commands to work
+    - No hidden telemetry; default offline; no network requests unless explicitly opt-in (future RAG)
+  Performance constraints:
+    - Prefer MetadataCache and event-driven incremental indexes; avoid full-vault scans and reading full file contents
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Keep it brief and decision-oriented; focus on why/what, not how.
+    - List all new capabilities using kebab-case; each must have a specs/<name>/spec.md.
+  design:
+    - Prefer minimal, explainable mechanisms over "smart" automation.
+    - Explicitly call out privacy/offline defaults and any future opt-in networked features.
+  specs:
+    - Requirements MUST be testable and use SHALL/MUST language.
+    - Scenarios MUST use correct #### headings and WHEN/THEN bullets.
+    - Avoid AI/RAG-specific behavior unless explicitly in-scope and opt-in.
+  tasks:
+    - Group tasks by dependency order; each task should be finishable in one session.
+    - Include manual acceptance steps that map back to spec scenarios.
