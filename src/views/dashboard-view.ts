@@ -6,6 +6,8 @@ import {AssignZkIdModal} from "../ui/assign-zk-id-modal";
 
 export const ZK_DASHBOARD_VIEW_TYPE = "zk-dashboard";
 
+type ZkDashboardPanel = "inbox" | "missing-id" | "missing-source" | "duplicate-ids";
+
 function countBy<T extends string>(values: Array<T | undefined>): Record<T, number> {
 	const out = {} as Record<T, number>;
 	for (const value of values) {
@@ -21,6 +23,7 @@ function openFile(plugin: ZkWorkflowWizardPlugin, file: TFile) {
 
 export class ZkDashboardView extends ItemView {
 	private rerenderTimer?: number;
+	private activePanel?: ZkDashboardPanel;
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -74,16 +77,58 @@ export class ZkDashboardView extends ItemView {
 		}, 200);
 	}
 
+	private showPanel(panel: ZkDashboardPanel) {
+		this.activePanel = this.activePanel === panel ? undefined : panel;
+		void this.render();
+	}
+
+	private createCard(
+		parent: HTMLElement,
+		card: {
+			title: string;
+			value: string;
+			subtitle?: string;
+			mod?: "warning" | "danger";
+			onClick?: () => void;
+		},
+	) {
+		const clickable = Boolean(card.onClick);
+		const el = parent.createEl(clickable ? "button" : "div", {
+			cls: [
+				"zk-card",
+				clickable ? "is-clickable" : "",
+				card.mod ? `is-${card.mod}` : "",
+			].filter(Boolean),
+			attr: clickable ? {type: "button"} : undefined,
+		});
+
+		el.createDiv({cls: "zk-card-title", text: card.title});
+		el.createDiv({cls: "zk-card-value", text: card.value});
+		if (card.subtitle) el.createDiv({cls: "zk-card-subtitle", text: card.subtitle});
+
+		if (card.onClick) {
+			el.addEventListener("click", card.onClick);
+		}
+	}
+
 	private async render() {
 		this.contentEl.empty();
 
+		this.contentEl.addClass("zk-dashboard");
+
 		const header = this.contentEl.createDiv({cls: "zk-dashboard-header"});
 		header.createEl("h2", {text: "Zk 概览"});
-		new Setting(header).addButton((btn) =>
-			btn.setButtonText("刷新").onClick(() => {
-				void this.render();
-			}),
-		);
+		const headerRight = header.createDiv({cls: "zk-dashboard-headerRight"});
+		headerRight.createDiv({
+			cls: "zk-dashboard-updated",
+			text: `最后更新：${new Date().toLocaleTimeString()}`,
+		});
+		const refreshButton = headerRight.createEl("button", {
+			cls: "zk-dashboard-btn",
+			text: "刷新",
+			attr: {type: "button"},
+		});
+		refreshButton.addEventListener("click", () => void this.render());
 
 		const index = await this.plugin.getIndex();
 		const notes = index.getAllNotes();
@@ -98,7 +143,8 @@ export class ZkDashboardView extends ItemView {
 		const literatureMissingSource = literature.filter((n) => !n.zkSource);
 		const duplicateIdGroups = index.getDuplicateZkIdGroups();
 
-		this.contentEl.createEl("p", {text: `Zk 笔记：${zkNotes.length} 条`});
+		const headline = this.contentEl.createDiv({cls: "zk-dashboard-headline"});
+		headline.createEl("div", {text: `Zk 笔记：${zkNotes.length} 条`});
 
 		const quick = this.contentEl.createDiv({cls: "zk-dashboard-actions"});
 		new Setting(quick)
@@ -125,54 +171,164 @@ export class ZkDashboardView extends ItemView {
 
 		this.contentEl.createEl("h3", {text: "统计"});
 
-		const stats = this.contentEl.createEl("ul");
-		stats.createEl("li", {text: `收集箱（inbox）：${byStatus.inbox ?? 0}`});
-		stats.createEl("li", {text: `永久笔记：${byType.permanent ?? 0}`});
-		stats.createEl("li", {text: `文献笔记：${byType.literature ?? 0}`});
-		stats.createEl("li", {text: `闪念笔记：${byType.fleeting ?? 0}`});
-		stats.createEl("li", {text: `已归档：${byStatus.archived ?? 0}`});
+		const statsGrid = this.contentEl.createDiv({cls: "zk-dashboard-grid"});
+		this.createCard(statsGrid, {
+			title: "收集箱",
+			value: String(byStatus.inbox ?? 0),
+			subtitle: "点击查看列表",
+			onClick: () => this.showPanel("inbox"),
+		});
+		this.createCard(statsGrid, {title: "永久笔记", value: String(byType.permanent ?? 0)});
+		this.createCard(statsGrid, {title: "文献笔记", value: String(byType.literature ?? 0)});
+		this.createCard(statsGrid, {title: "闪念笔记", value: String(byType.fleeting ?? 0)});
+		this.createCard(statsGrid, {title: "已归档", value: String(byStatus.archived ?? 0)});
 
 		this.contentEl.createEl("h3", {text: "数据健康"});
 
-		const health = this.contentEl.createEl("ul");
-		health.createEl("li", {text: `永久笔记缺少卡片 ID：${permanentMissingId.length}`});
-		health.createEl("li", {text: `文献笔记缺少来源：${literatureMissingSource.length}`});
-		health.createEl("li", {text: `卡片 ID 冲突组数：${duplicateIdGroups.length}`});
+		const healthGrid = this.contentEl.createDiv({cls: "zk-dashboard-grid"});
+		this.createCard(healthGrid, {
+			title: "永久缺卡片 ID",
+			value: String(permanentMissingId.length),
+			subtitle: "点击查看列表",
+			mod: permanentMissingId.length > 0 ? "warning" : undefined,
+			onClick: () => this.showPanel("missing-id"),
+		});
+		this.createCard(healthGrid, {
+			title: "文献缺来源",
+			value: String(literatureMissingSource.length),
+			subtitle: "点击查看列表",
+			mod: literatureMissingSource.length > 0 ? "warning" : undefined,
+			onClick: () => this.showPanel("missing-source"),
+		});
+		this.createCard(healthGrid, {
+			title: "卡片 ID 冲突组数",
+			value: String(duplicateIdGroups.length),
+			subtitle: "点击查看冲突组",
+			mod: duplicateIdGroups.length > 0 ? "danger" : undefined,
+			onClick: () => this.showPanel("duplicate-ids"),
+		});
 
-		if (permanentMissingId.length > 0) {
-			const section = this.contentEl.createDiv();
-			section.createEl("p", {text: "缺少卡片 ID（点击打开，或在笔记中运行分配命令）"});
-			for (const note of permanentMissingId.slice(0, 10)) {
-				new Setting(section)
-					.setName(note.file.basename)
-					.setDesc(note.file.path)
-					.addButton((btn) =>
-						btn.setButtonText("打开").onClick(() => openFile(this.plugin, note.file)),
-					)
-					.addButton((btn) =>
-						btn.setButtonText("分配").onClick(() => new AssignZkIdModal(this.plugin, note.file).open()),
-					);
+		this.contentEl.createEl("h3", {text: "列表"});
+
+		const panels = this.contentEl.createDiv({cls: "zk-dashboard-panels"});
+		const panelEls: Partial<Record<ZkDashboardPanel, HTMLDetailsElement>> = {};
+
+		const inboxPanel = panels.createEl("details", {cls: "zk-dashboard-panel"});
+		panelEls["inbox"] = inboxPanel;
+		inboxPanel.createEl("summary", {
+			text: `收集箱（inbox）：${byStatus.inbox ?? 0} 条`,
+		});
+		inboxPanel.open = this.activePanel === "inbox";
+		{
+			const content = inboxPanel.createDiv({cls: "zk-dashboard-panelBody"});
+			const inboxItems = index.getInboxItems();
+			if (inboxItems.length === 0) {
+				content.createEl("p", {text: "收集箱为空。"});
+			} else {
+				for (const note of inboxItems.slice(0, 20)) {
+					new Setting(content)
+						.setName(note.file.basename)
+						.setDesc(note.file.path)
+						.addButton((btn) => btn.setButtonText("打开").onClick(() => openFile(this.plugin, note.file)))
+						.addButton((btn) =>
+							btn.setButtonText("处理").onClick(() => new ProcessWizardModal(this.plugin, note.file).open()),
+						);
+				}
+				if (inboxItems.length > 20) {
+					content.createEl("p", {text: "仅显示前 20 条。"});
+				}
 			}
-			if (permanentMissingId.length > 10) {
-				section.createEl("p", {text: "仅显示前 10 条。"});
+			new Setting(content).addButton((btn) => btn.setButtonText("打开收集箱").onClick(() => new InboxModal(this.plugin).open()));
+		}
+
+		const missingIdPanel = panels.createEl("details", {cls: "zk-dashboard-panel"});
+		panelEls["missing-id"] = missingIdPanel;
+		missingIdPanel.createEl("summary", {
+			text: `永久缺卡片 ID：${permanentMissingId.length} 条`,
+		});
+		missingIdPanel.open = this.activePanel === "missing-id";
+		{
+			const content = missingIdPanel.createDiv({cls: "zk-dashboard-panelBody"});
+			content.createEl("p", {text: "提示：点击打开，或直接分配卡片 ID。"});
+
+			if (permanentMissingId.length === 0) {
+				content.createEl("p", {text: "没有发现问题。"});
+			} else {
+				for (const note of permanentMissingId.slice(0, 20)) {
+					new Setting(content)
+						.setName(note.file.basename)
+						.setDesc(note.file.path)
+						.addButton((btn) => btn.setButtonText("打开").onClick(() => openFile(this.plugin, note.file)))
+						.addButton((btn) =>
+							btn.setButtonText("分配").onClick(() => new AssignZkIdModal(this.plugin, note.file).open()),
+						);
+				}
+				if (permanentMissingId.length > 20) {
+					content.createEl("p", {text: "仅显示前 20 条。"});
+				}
 			}
 		}
 
-		if (duplicateIdGroups.length > 0) {
-			const section = this.contentEl.createDiv();
-			section.createEl("p", {text: "卡片 ID 冲突（同一 ID 被多个文件使用）"});
-			for (const group of duplicateIdGroups.slice(0, 10)) {
-				const groupEl = section.createEl("details");
-				groupEl.createEl("summary", {text: `卡片 ID：${group.zkId}（${group.files.length}）`});
-				for (const file of group.files) {
-					new Setting(groupEl)
-						.setName(file.basename)
-						.setDesc(file.path)
-						.addButton((btn) => btn.setButtonText("打开").onClick(() => openFile(this.plugin, file)));
+		const missingSourcePanel = panels.createEl("details", {cls: "zk-dashboard-panel"});
+		panelEls["missing-source"] = missingSourcePanel;
+		missingSourcePanel.createEl("summary", {
+			text: `文献缺来源：${literatureMissingSource.length} 条`,
+		});
+		missingSourcePanel.open = this.activePanel === "missing-source";
+		{
+			const content = missingSourcePanel.createDiv({cls: "zk-dashboard-panelBody"});
+			content.createEl("p", {text: "建议：为文献笔记补齐 zk_source，方便后续检索与召回。"});
+
+			if (literatureMissingSource.length === 0) {
+				content.createEl("p", {text: "没有发现问题。"});
+			} else {
+				for (const note of literatureMissingSource.slice(0, 20)) {
+					new Setting(content)
+						.setName(note.file.basename)
+						.setDesc(note.file.path)
+						.addButton((btn) => btn.setButtonText("打开").onClick(() => openFile(this.plugin, note.file)));
+				}
+				if (literatureMissingSource.length > 20) {
+					content.createEl("p", {text: "仅显示前 20 条。"});
 				}
 			}
-			if (duplicateIdGroups.length > 10) {
-				section.createEl("p", {text: "仅显示前 10 组。"});
+		}
+
+		const duplicateIdsPanel = panels.createEl("details", {cls: "zk-dashboard-panel"});
+		panelEls["duplicate-ids"] = duplicateIdsPanel;
+		duplicateIdsPanel.createEl("summary", {
+			text: `卡片 ID 冲突：${duplicateIdGroups.length} 组`,
+		});
+		duplicateIdsPanel.open = this.activePanel === "duplicate-ids";
+		{
+			const content = duplicateIdsPanel.createDiv({cls: "zk-dashboard-panelBody"});
+			content.createEl("p", {text: "同一卡片 ID 被多个文件使用会影响链式组织与召回。"});
+
+			if (duplicateIdGroups.length === 0) {
+				content.createEl("p", {text: "没有发现问题。"});
+			} else {
+				for (const group of duplicateIdGroups.slice(0, 20)) {
+					const groupEl = content.createEl("details");
+					groupEl.createEl("summary", {text: `卡片 ID：${group.zkId}（${group.files.length}）`});
+					for (const file of group.files) {
+						new Setting(groupEl)
+							.setName(file.basename)
+							.setDesc(file.path)
+							.addButton((btn) => btn.setButtonText("打开").onClick(() => openFile(this.plugin, file)));
+					}
+				}
+				if (duplicateIdGroups.length > 20) {
+					content.createEl("p", {text: "仅显示前 20 组。"});
+				}
+			}
+		}
+
+		if (this.activePanel) {
+			const target = panelEls[this.activePanel];
+			if (target) {
+				window.requestAnimationFrame(() => {
+					target.scrollIntoView({block: "start"});
+				});
 			}
 		}
 	}

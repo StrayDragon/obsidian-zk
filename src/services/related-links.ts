@@ -41,37 +41,37 @@ export async function upsertRelatedLinksSection(
 	const sourcePath = file.path;
 
 	let addedCount = 0;
-		await app.vault.process(file, (data) => {
-			const lines = data.split(/\r?\n/);
+	await app.vault.process(file, (data) => {
+		const lines = data.split(/\r?\n/);
 
-			let headingIndex = findHeadingLineIndex(lines, headingLine);
-			if (headingIndex === -1) {
-				// Append a new section at the end.
-				const last = lines.length > 0 ? lines[lines.length - 1] : undefined;
-				if (last && last.trim() !== "") lines.push("");
-				lines.push(headingLine, "");
-				headingIndex = lines.length - 2;
-			}
+		let headingIndex = findHeadingLineIndex(lines, headingLine);
+		if (headingIndex === -1) {
+			// Append a new section at the end.
+			const last = lines.length > 0 ? lines[lines.length - 1] : undefined;
+			if (last && last.trim() !== "") lines.push("");
+			lines.push(headingLine, "");
+			headingIndex = lines.length - 2;
+		}
 
-			let sectionEndIndex = lines.length;
-			for (let i = headingIndex + 1; i < lines.length; i++) {
-				const line = lines[i];
-				if (!line) continue;
-				if (isHeadingLine(line)) {
-					sectionEndIndex = i;
-					break;
-				}
+		let sectionEndIndex = lines.length;
+		for (let i = headingIndex + 1; i < lines.length; i++) {
+			const line = lines[i];
+			if (!line) continue;
+			if (isHeadingLine(line)) {
+				sectionEndIndex = i;
+				break;
 			}
+		}
 
-			const existingTargets = new Set<string>();
-			for (let i = headingIndex + 1; i < sectionEndIndex; i++) {
-				const line = lines[i];
-				if (!line) continue;
-				for (const target of extractWikiLinkTargets(line)) {
-					const dest = app.metadataCache.getFirstLinkpathDest(target, sourcePath);
-					if (dest) existingTargets.add(dest.path);
-				}
+		const existingTargets = new Set<string>();
+		for (let i = headingIndex + 1; i < sectionEndIndex; i++) {
+			const line = lines[i];
+			if (!line) continue;
+			for (const target of extractWikiLinkTargets(line)) {
+				const dest = app.metadataCache.getFirstLinkpathDest(target, sourcePath);
+				if (dest) existingTargets.add(dest.path);
 			}
+		}
 
 		const newLines: string[] = [];
 		for (const related of relatedFiles) {

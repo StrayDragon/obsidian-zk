@@ -1,4 +1,7 @@
-import type {ZkIndex} from "./zk-index";
+export interface ZkIdIndex {
+	getAllZkIds(): string[];
+	isZkIdAvailable(zkId: string, exceptPath?: string): boolean;
+}
 
 function parseTopLevelNumber(zkId: string): number | undefined {
 	const match = zkId.match(/^(\d+)/);
@@ -32,7 +35,7 @@ function numberToLetters(n: number): string {
 	return out;
 }
 
-export function generateTopLevelZkId(index: ZkIndex, exceptPath?: string): string {
+export function generateTopLevelZkId(index: ZkIdIndex, exceptPath?: string): string {
 	const all = index.getAllZkIds();
 	let max = 0;
 	for (const id of all) {
@@ -49,7 +52,7 @@ export function generateTopLevelZkId(index: ZkIndex, exceptPath?: string): strin
 
 export function generateZkIdAfterAnchor(
 	anchorZkId: string,
-	index: ZkIndex,
+	index: ZkIdIndex,
 	exceptPath?: string,
 ): string {
 	const incremented = incrementTrailingNumber(anchorZkId);
