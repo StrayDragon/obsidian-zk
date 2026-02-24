@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-zk",
 	"name": "Zk",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"minAppVersion": "0.15.0",
 	"description": "卡片盒笔记法工作流向导：从收集箱（inbox）到永久笔记（permanent），建立关联并持续推进。",
 	"isDesktopOnly": false
