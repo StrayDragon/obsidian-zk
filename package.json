@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-zk",
 	"private": true,
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Zettelkasten workflow wizard for Obsidian.",
 	"main": "main.js",
 	"type": "module",
