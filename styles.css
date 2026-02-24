@@ -1,8 +1,173 @@
-/*
+/* Zk dashboard */
+.zk-dashboard {
+	padding: var(--size-4-5, 20px);
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.zk-dashboard .zk-dashboard-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--size-4-4, 16px);
+	margin-bottom: var(--size-4-4, 16px);
+}
 
-If your plugin does not need CSS, delete this file.
+.zk-dashboard .zk-dashboard-header h2 {
+	margin: 0;
+}
 
-*/
+.zk-dashboard .zk-dashboard-headerRight {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2, 8px);
+}
+
+.zk-dashboard .zk-dashboard-updated {
+	color: var(--text-muted);
+	font-size: 0.85em;
+	white-space: nowrap;
+}
+
+.zk-dashboard .zk-dashboard-btn {
+	appearance: none;
+	height: 32px;
+	padding: 0 var(--size-4-2, 8px);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s, 8px);
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	font: inherit;
+	cursor: pointer;
+}
+
+.zk-dashboard .zk-dashboard-btn:hover {
+	border-color: var(--interactive-accent);
+}
+
+.zk-dashboard .zk-dashboard-btn:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+.zk-dashboard .zk-dashboard-headline {
+	margin-bottom: var(--size-4-2, 8px);
+	color: var(--text-muted);
+}
+
+.zk-dashboard .zk-dashboard-actions .setting-item {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m, 12px);
+	padding: var(--size-4-2, 8px) var(--size-4-3, 12px);
+	background: var(--background-secondary);
+}
+
+.zk-dashboard .zk-dashboard-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+	gap: var(--size-4-3, 12px);
+	margin: var(--size-4-2, 8px) 0 var(--size-4-5, 20px);
+}
+
+.zk-dashboard .zk-card {
+	appearance: none;
+	width: 100%;
+	min-height: 92px;
+	padding: var(--size-4-3, 12px);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m, 12px);
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	text-align: left;
+	font: inherit;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: var(--size-4-1, 4px);
+}
+
+.zk-dashboard .zk-card.is-clickable {
+	cursor: pointer;
+}
+
+.zk-dashboard .zk-card.is-clickable:hover {
+	border-color: var(--interactive-accent);
+	background: var(--background-secondary-alt, var(--background-secondary));
+}
+
+.zk-dashboard .zk-card.is-clickable:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+.zk-dashboard .zk-card-title {
+	color: var(--text-muted);
+	font-size: 0.85em;
+}
+
+.zk-dashboard .zk-card-value {
+	font-size: 1.8em;
+	line-height: 1.1;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+}
+
+.zk-dashboard .zk-card-subtitle {
+	color: var(--text-muted);
+	font-size: 0.85em;
+}
+
+.zk-dashboard .zk-card.is-warning {
+	border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
+}
+
+.zk-dashboard .zk-card.is-warning .zk-card-value {
+	color: var(--text-warning, var(--text-accent));
+}
+
+.zk-dashboard .zk-card.is-danger {
+	border-color: var(--background-modifier-error, var(--background-modifier-border));
+}
+
+.zk-dashboard .zk-card.is-danger .zk-card-value {
+	color: var(--text-error);
+}
+
+.zk-dashboard .zk-dashboard-panels {
+	display: grid;
+	gap: var(--size-4-3, 12px);
+}
+
+.zk-dashboard .zk-dashboard-panel > summary {
+	cursor: pointer;
+	padding: var(--size-4-2, 8px) var(--size-4-3, 12px);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s, 8px);
+	background: var(--background-secondary);
+	font-weight: 600;
+}
+
+.zk-dashboard .zk-dashboard-panel > summary:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+.zk-dashboard .zk-dashboard-panel[open] > summary {
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.zk-dashboard .zk-dashboard-panelBody {
+	padding: var(--size-4-3, 12px);
+	border: 1px solid var(--background-modifier-border);
+	border-top: none;
+	border-bottom-left-radius: var(--radius-s, 8px);
+	border-bottom-right-radius: var(--radius-s, 8px);
+	background: var(--background-primary);
+}
+
+.zk-dashboard .zk-dashboard-panelBody p:first-child {
+	margin-top: 0;
+}
+
+.zk-dashboard .zk-dashboard-panelBody p:last-child {
+	margin-bottom: 0;
+}
