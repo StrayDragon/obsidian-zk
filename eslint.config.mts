@@ -30,6 +30,7 @@ export default tseslint.config(
 		rules: {
 			"obsidianmd/no-sample-code": "warn",
 			"obsidianmd/sample-names": "warn",
+			"obsidianmd/ui/sentence-case": ["error", {enforceCamelCaseLower: true, ignoreRegex: ["zk_id"]}],
 		},
 	},
 	globalIgnores([

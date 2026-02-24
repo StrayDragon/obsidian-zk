@@ -1,17 +1,17 @@
 ## ADDED Requirements
 
 ### Requirement: Start the process wizard from the current note
-插件 MUST 支持从当前活动文件启动处理向导，用于将 inbox 笔记升级为永久笔记。
+插件 MUST 支持从当前活动文件启动处理向导，用于将收集箱（inbox）笔记升级为永久（permanent）笔记。
 
 #### Scenario: Start processing the current inbox note
-- **WHEN** 用户执行命令 `Zk: 5| 处理当前笔记（升级为永久笔记）`
+- **WHEN** 用户执行命令 `5| 处理当前笔记 · 升级为永久笔记（permanent）`
 - **THEN** 若当前文件 `zk_status` 等于 `inbox`，插件 MUST 打开处理向导并以该文件为目标
 
 ### Requirement: Start the process wizard from the inbox queue
-插件 MUST 支持从 Inbox 队列启动处理向导（例如“处理下一条”或从列表选择）。
+插件 MUST 支持从收集箱（inbox）队列启动处理向导（例如“处理下一条”或从列表选择）。
 
 #### Scenario: Start processing from inbox list
-- **WHEN** 用户在 Inbox 队列界面选择某条项目并执行“Process”
+- **WHEN** 用户在收集箱（inbox）队列界面选择某条项目并执行“Process”
 - **THEN** 插件 MUST 打开处理向导并以所选文件为目标
 
 ### Requirement: Promote an inbox note in place

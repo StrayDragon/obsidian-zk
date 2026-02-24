@@ -1,24 +1,8 @@
 import {Modal, Notice, Setting, TFile} from "obsidian";
 import type ZkWorkflowWizardPlugin from "../main";
 import {setZkStatus} from "../services/zk-frontmatter";
+import {getZkFieldLabel, getZkStatusLabel, getZkTypeLabel} from "../utils/zk-labels";
 import {ProcessWizardModal} from "./process-wizard-modal";
-
-function getTypeLabel(type?: string): string {
-	switch (type) {
-		case "fleeting":
-			return "闪念";
-		case "literature":
-			return "文献";
-		case "permanent":
-			return "永久";
-		case "index":
-			return "索引";
-		case "project":
-			return "项目";
-		default:
-			return "未标记";
-	}
-}
 
 export class InboxModal extends Modal {
 	constructor(private readonly plugin: ZkWorkflowWizardPlugin) {
@@ -37,7 +21,7 @@ export class InboxModal extends Modal {
 		this.contentEl.empty();
 
 		const header = this.contentEl.createDiv({cls: "zk-inbox-header"});
-		header.createEl("h2", {text: "收集箱"});
+		header.createEl("h2", {text: getZkStatusLabel("inbox")});
 		new Setting(header).addButton((btn) =>
 			btn.setButtonText("刷新").onClick(() => {
 				void this.render();
@@ -47,21 +31,26 @@ export class InboxModal extends Modal {
 		const index = await this.plugin.getIndex();
 		const inbox = index.getInboxItems();
 
+		this.contentEl.createEl("p", {
+			text: `${getZkFieldLabel("status")}：${getZkStatusLabel("inbox")}`,
+		});
 		this.contentEl.createEl("p", {text: `待处理：${inbox.length} 条`});
 
 		if (inbox.length === 0) {
-			this.contentEl.createEl("p", {text: "收集箱为空。请先新建一条闪念或文献笔记。"});
+			this.contentEl.createEl("p", {
+				text: `${getZkStatusLabel("inbox")}为空。请先新建一条${getZkTypeLabel("fleeting")}或${getZkTypeLabel("literature")}。`,
+			});
 			return;
 		}
 
 		for (const item of inbox) {
 			const file = item.file;
-			const typeLabel = getTypeLabel(item.zkType);
-			const source = item.zkSource ? `；来源：${item.zkSource}` : "";
+			const typeLabel = getZkTypeLabel(item.zkType);
+			const source = item.zkSource ? `；${getZkFieldLabel("source")}：${item.zkSource}` : "";
 
 			new Setting(this.contentEl)
 				.setName(file.basename)
-				.setDesc(`类型：${typeLabel}${source}`)
+				.setDesc(`${getZkFieldLabel("type")}：${typeLabel}${source}`)
 				.addButton((btn) =>
 					btn.setButtonText("打开").onClick(() => {
 						void this.openFile(file);
@@ -74,7 +63,7 @@ export class InboxModal extends Modal {
 					}),
 				)
 				.addButton((btn) =>
-					btn.setButtonText("归档").onClick(() => {
+					btn.setButtonText("归档（archived）").onClick(() => {
 						void this.archiveFile(file);
 					}),
 				);
@@ -89,7 +78,7 @@ export class InboxModal extends Modal {
 	private async archiveFile(file: TFile) {
 		try {
 			await setZkStatus(this.plugin, file, "archived");
-			new Notice("已归档。");
+			new Notice(`${getZkFieldLabel("status")}已更新为 ${getZkStatusLabel("archived")}。`);
 			void this.render();
 		} catch (error) {
 			console.error(error);
