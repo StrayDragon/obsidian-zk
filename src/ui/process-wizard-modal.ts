@@ -1,5 +1,6 @@
 import {Modal, Notice, Setting, TFile} from "obsidian";
 import type ZkWorkflowWizardPlugin from "../main";
+import {t} from "../i18n";
 import {generateTopLevelZkId, generateZkIdAfterAnchor} from "../services/zk-id";
 import {promoteToPermanent, setZkStatus} from "../services/zk-frontmatter";
 import {upsertRelatedLinksSection} from "../services/related-links";
@@ -28,8 +29,8 @@ export class ProcessWizardModal extends Modal {
 
 	private async render() {
 		this.contentEl.empty();
-		this.contentEl.createEl("h2", {text: "处理向导（process wizard）"});
-		this.contentEl.createEl("p", {text: `目标：${this.file.basename}`});
+		this.contentEl.createEl("h2", {text: t("modals.processWizard.title")});
+		this.contentEl.createEl("p", {text: t("modals.processWizard.target", {filename: this.file.basename})});
 
 		const index = await this.plugin.getIndex();
 		const note = index.getNote(this.file);
@@ -37,21 +38,35 @@ export class ProcessWizardModal extends Modal {
 		const typeLabel = getZkTypeLabel(note?.zkType);
 		const statusLabel = getZkStatusLabel(note?.zkStatus);
 		this.contentEl.createEl("p", {
-			text: `${getZkFieldLabel("type")}：${typeLabel}；${getZkFieldLabel("status")}：${statusLabel}`,
+			text: t("modals.processWizard.typeStatusLine", {
+				typeField: getZkFieldLabel("type"),
+				typeLabel,
+				statusField: getZkFieldLabel("status"),
+				statusLabel,
+			}),
 		});
 
 		if (note?.zkStatus !== "inbox") {
 			this.contentEl.createEl("p", {
-				text: `提示：当前文件的${getZkFieldLabel("status")}不是 ${getZkStatusLabel("inbox")}。你仍然可以将其标记为 ${getZkStatusLabel("inbox")} 后再继续。`,
+				text: t("modals.processWizard.notInboxTip", {
+					statusField: getZkFieldLabel("status"),
+					inboxStatus: getZkStatusLabel("inbox"),
+				}),
 			});
 			new Setting(this.contentEl).addButton((btn) =>
-				btn.setButtonText(`标记为 ${getZkStatusLabel("inbox")}`).onClick(() => {
+				btn
+					.setButtonText(
+						t("modals.processWizard.markAsInboxButton", {inboxStatus: getZkStatusLabel("inbox")}),
+					)
+					.onClick(() => {
 					void this.markAsInbox();
 				}),
 			);
 		}
 
-		this.contentEl.createEl("h3", {text: `1) 分配${getZkFieldLabel("id")}`});
+		this.contentEl.createEl("h3", {
+			text: t("modals.processWizard.step1Title", {fieldId: getZkFieldLabel("id")}),
+		});
 
 		const currentZkId = note?.zkId ?? "";
 		if (!this.zkId) this.zkId = currentZkId;
@@ -61,27 +76,29 @@ export class ProcessWizardModal extends Modal {
 			: [];
 
 		new Setting(this.contentEl)
-			.setName("生成方式")
-			.setDesc("建议：新链用于开启一个新论证链；选锚点用于接续/分支已有讨论。")
+			.setName(t("modals.processWizard.method.name"))
+			.setDesc(t("modals.processWizard.method.desc"))
 			.addButton((btn) =>
-				btn.setButtonText("新链").onClick(() => {
+				btn.setButtonText(t("modals.processWizard.method.newChain")).onClick(() => {
 					this.anchorFile = undefined;
 					this.zkId = generateTopLevelZkId(index, this.file.path);
 					void this.render();
 				}),
 			)
 			.addButton((btn) =>
-				btn.setButtonText("选锚点…").onClick(() => {
+				btn.setButtonText(t("modals.processWizard.method.pickAnchor")).onClick(() => {
 					void this.pickAnchor();
 				}),
 			);
 
 		new Setting(this.contentEl)
-			.setName("卡片 ID（zk_id，可编辑）")
+			.setName(t("modals.assignZkId.idInput.name"))
 			.setDesc(
 				conflicts.length > 0
-					? `冲突：${conflicts.map((f) => f.path).join(", ")}`
-					: "将写入 frontmatter 的 zk_id 字段（不会写入标题/正文）。",
+					? t("modals.processWizard.idInput.conflict", {
+							paths: conflicts.map((f) => f.path).join(", "),
+						})
+					: t("modals.processWizard.idInput.desc"),
 			)
 			.addText((text) =>
 				text.setValue(this.zkId).onChange((value) => {
@@ -90,16 +107,18 @@ export class ProcessWizardModal extends Modal {
 				}),
 			);
 
-		this.contentEl.createEl("h3", {text: "2) 选择相关卡片（写入到“## 关联”）"});
+		this.contentEl.createEl("h3", {
+			text: t("modals.processWizard.step2Title", {heading: this.plugin.settings.relatedSectionHeading}),
+		});
 
 		if (this.relatedFilesByPath.size > 0) {
-			this.contentEl.createEl("p", {text: "已选择："});
+			this.contentEl.createEl("p", {text: t("modals.processWizard.selectedHeading")});
 			for (const related of this.relatedFilesByPath.values()) {
 				new Setting(this.contentEl)
 					.setName(related.basename)
 					.setDesc(related.path)
 					.addButton((btn) =>
-						btn.setButtonText("移除").onClick(() => {
+						btn.setButtonText(t("common.remove")).onClick(() => {
 							this.relatedFilesByPath.delete(related.path);
 							void this.render();
 						}),
@@ -108,10 +127,10 @@ export class ProcessWizardModal extends Modal {
 		}
 
 		new Setting(this.contentEl)
-			.setName("添加相关卡片")
-			.setDesc("你可以从建议添加，或搜索任意笔记。")
+			.setName(t("modals.processWizard.addRelated.name"))
+			.setDesc(t("modals.processWizard.addRelated.desc"))
 			.addButton((btn) =>
-				btn.setButtonText("搜索添加…").onClick(() => {
+				btn.setButtonText(t("modals.processWizard.addRelated.searchButton")).onClick(() => {
 					void this.pickRelatedFile();
 				}),
 			);
@@ -121,13 +140,13 @@ export class ProcessWizardModal extends Modal {
 			.filter((s) => !this.relatedFilesByPath.has(s.file.path));
 
 		if (suggestions.length > 0) {
-			this.contentEl.createEl("p", {text: "建议（可解释）："});
+			this.contentEl.createEl("p", {text: t("modals.processWizard.suggestionsHeading")});
 			for (const suggestion of suggestions) {
 				new Setting(this.contentEl)
 					.setName(suggestion.file.basename)
 					.setDesc(suggestion.reason)
 					.addButton((btn) =>
-						btn.setButtonText("添加").onClick(() => {
+						btn.setButtonText(t("common.add")).onClick(() => {
 							this.relatedFilesByPath.set(suggestion.file.path, suggestion.file);
 							void this.render();
 						}),
@@ -135,9 +154,9 @@ export class ProcessWizardModal extends Modal {
 			}
 		}
 
-		this.contentEl.createEl("h3", {text: "3) 完成升级"});
+		this.contentEl.createEl("h3", {text: t("modals.processWizard.step3Title")});
 		this.contentEl.createEl("p", {
-			text: "插件不会替你改写正文内容；只会写入 frontmatter（zk_type/zk_status/zk_id 等字段）与维护“## 关联”链接段。",
+			text: t("modals.processWizard.step3Desc", {heading: this.plugin.settings.relatedSectionHeading}),
 		});
 
 		const canFinalize = this.zkId.trim() !== "" && conflicts.length === 0;
@@ -146,14 +165,14 @@ export class ProcessWizardModal extends Modal {
 		new Setting(footer)
 			.addButton((btn) =>
 				btn
-					.setButtonText("完成升级")
+					.setButtonText(t("modals.processWizard.finalizeButton"))
 					.setCta()
 					.setDisabled(!canFinalize)
 					.onClick(() => {
 						void this.finalize();
 					}),
 			)
-			.addButton((btn) => btn.setButtonText("取消").onClick(() => this.close()));
+			.addButton((btn) => btn.setButtonText(t("common.cancel")).onClick(() => this.close()));
 	}
 
 	private async markAsInbox() {
@@ -161,11 +180,16 @@ export class ProcessWizardModal extends Modal {
 			await setZkStatus(this.plugin, this.file, "inbox");
 			const index = await this.plugin.getIndex();
 			index.refreshFile(this.file);
-			new Notice(`${getZkFieldLabel("status")}已更新为 ${getZkStatusLabel("inbox")}。`);
+			new Notice(
+				t("notices.fieldUpdated", {
+					field: getZkFieldLabel("status"),
+					value: getZkStatusLabel("inbox"),
+				}),
+			);
 			void this.render();
 		} catch (error) {
 			console.error(error);
-			new Notice("写入失败，请查看控制台。");
+			new Notice(t("notices.writeFailed"));
 		}
 	}
 
@@ -179,21 +203,21 @@ export class ProcessWizardModal extends Modal {
 		new FileSuggestModal(
 			this.plugin.app,
 			items,
-				(file) => {
-					this.anchorFile = file;
-					const anchorId = index.getNote(file)?.zkId;
-					if (!anchorId) {
-						new Notice(`所选锚点没有${getZkFieldLabel("id")}。`);
-						return;
-					}
-					this.zkId = generateZkIdAfterAnchor(anchorId, index, this.file.path);
-					void this.render();
-				},
-				{
-					placeholder: "选择锚点卡片（已有 zk_id）…",
-					emptyStateText: "没有可用的锚点卡片（zk_id）",
-				},
-			).open();
+			(file) => {
+				this.anchorFile = file;
+				const anchorId = index.getNote(file)?.zkId;
+				if (!anchorId) {
+					new Notice(t("notices.anchorMissingId", {fieldId: getZkFieldLabel("id")}));
+					return;
+				}
+				this.zkId = generateZkIdAfterAnchor(anchorId, index, this.file.path);
+				void this.render();
+			},
+			{
+				placeholder: t("modals.assignZkId.pickAnchor.placeholder"),
+				emptyStateText: t("modals.assignZkId.pickAnchor.empty"),
+			},
+		).open();
 	}
 
 	private async pickRelatedFile() {
@@ -209,7 +233,7 @@ export class ProcessWizardModal extends Modal {
 				void this.render();
 			},
 			{
-				placeholder: "搜索要关联的卡片…",
+				placeholder: t("modals.processWizard.pickRelated.placeholder"),
 			},
 		).open();
 	}
@@ -219,14 +243,16 @@ export class ProcessWizardModal extends Modal {
 		const desiredId = this.zkId.trim();
 
 		if (!desiredId) {
-			new Notice("卡片 ID（zk_id）不能为空。");
+			new Notice(t("notices.fieldRequired", {field: getZkFieldLabel("id")}));
 			return;
 		}
 
 		const conflicts = index.getZkIdConflicts(desiredId, this.file.path);
 		if (conflicts.length > 0) {
 			const first = conflicts[0];
-			new Notice(`卡片 ID（zk_id）冲突：${first ? first.path : "未知"}`);
+			new Notice(
+				t("notices.zkIdConflict", {path: first ? first.path : t("common.unknown")}),
+			);
 			return;
 		}
 
@@ -243,12 +269,16 @@ export class ProcessWizardModal extends Modal {
 
 			index.refreshFile(this.file);
 			new Notice(
-				`已升级为${getZkTypeLabel("permanent")}；${getZkFieldLabel("status")}已更新为 ${getZkStatusLabel("done")}。`,
+				t("notices.promotedToPermanent", {
+					permanent: getZkTypeLabel("permanent"),
+					statusField: getZkFieldLabel("status"),
+					done: getZkStatusLabel("done"),
+				}),
 			);
 			this.close();
 		} catch (error) {
 			console.error(error);
-			new Notice("处理失败，请查看控制台。");
+			new Notice(t("notices.operationFailed"));
 		}
 	}
 }

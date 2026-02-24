@@ -118,6 +118,7 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 - Use **bold** to indicate literal UI labels. Prefer "select" for interactions.
 - Use arrow notation for navigation: **Settings → Community plugins**.
 - Keep in-app strings short, consistent, and free of jargon.
+- i18n policy: unless explicitly requested, only add **zh-only i18n** (no additional languages). Keep bilingual hints inside the Chinese copy via `中文（English token）` / `中文（zk_key）` so we get consistency without extra maintenance.
 
 ## Performance
 

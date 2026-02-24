@@ -1,4 +1,5 @@
 import type ZkWorkflowWizardPlugin from "../main";
+import {t} from "../i18n";
 import {newFleetingNote, newLiteratureNote} from "./capture";
 import {
 	assignZkIdCurrentNote,
@@ -12,49 +13,49 @@ import {
 export function registerCommands(plugin: ZkWorkflowWizardPlugin) {
 	plugin.addCommand({
 		id: "zk-new-fleeting-note",
-		name: "1| 新建闪念笔记（fleeting）",
+		name: t("commands.newFleetingNote"),
 		callback: () => void newFleetingNote(plugin),
 	});
 
 	plugin.addCommand({
 		id: "zk-new-literature-note",
-		name: "2| 新建文献笔记（literature）",
+		name: t("commands.newLiteratureNote"),
 		callback: () => void newLiteratureNote(plugin),
 	});
 
 	plugin.addCommand({
 		id: "zk-open-inbox",
-		name: "3| 打开收集箱（inbox）",
+		name: t("commands.openInbox"),
 		callback: () => openInbox(plugin),
 	});
 
 	plugin.addCommand({
 		id: "zk-open-dashboard",
-		name: "概览（dashboard）",
+		name: t("commands.openDashboard"),
 		callback: () => void openDashboard(plugin),
 	});
 
 	plugin.addCommand({
 		id: "zk-open-library-index",
-		name: "图书馆索引（library index）",
+		name: t("commands.openLibraryIndex"),
 		callback: () => void openLibraryIndex(plugin),
 	});
 
 	plugin.addCommand({
 		id: "zk-process-next-inbox-item",
-		name: "4| 处理下一条 · 收集箱（inbox）",
+		name: t("commands.processNextInboxItem"),
 		callback: () => void processNextInboxItem(plugin),
 	});
 
 	plugin.addCommand({
 		id: "zk-process-current-note",
-		name: "5| 处理当前笔记 · 升级为永久笔记（permanent）",
+		name: t("commands.processCurrentNote"),
 		callback: () => void processCurrentNote(plugin),
 	});
 
 	plugin.addCommand({
 		id: "zk-assign-zk-id-current-note",
-		name: "工具 - 分配卡片 ID（当前笔记）",
+		name: t("commands.assignZkIdCurrentNote"),
 		callback: () => void assignZkIdCurrentNote(plugin),
 	});
 }

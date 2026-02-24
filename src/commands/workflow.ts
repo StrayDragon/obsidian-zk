@@ -6,6 +6,7 @@ import {AssignZkIdModal} from "../ui/assign-zk-id-modal";
 import {ZK_DASHBOARD_VIEW_TYPE} from "../views/dashboard-view";
 import {ZK_LIBRARY_INDEX_VIEW_TYPE} from "../views/library-index-view";
 import {getZkStatusLabel} from "../utils/zk-labels";
+import {t} from "../i18n";
 
 export function openInbox(plugin: ZkWorkflowWizardPlugin) {
 	new InboxModal(plugin).open();
@@ -29,20 +30,20 @@ export async function processNextInboxItem(plugin: ZkWorkflowWizardPlugin) {
 		const items = index.getInboxItems();
 		const next = items[0]?.file;
 		if (!next) {
-			new Notice(`${getZkStatusLabel("inbox")}为空。`);
+			new Notice(t("notices.queueEmpty", {queue: getZkStatusLabel("inbox")}));
 			return;
 		}
 		new ProcessWizardModal(plugin, next).open();
 	} catch (error) {
 		console.error(error);
-		new Notice("处理失败，请查看控制台。");
+		new Notice(t("notices.operationFailed"));
 	}
 }
 
 export async function processCurrentNote(plugin: ZkWorkflowWizardPlugin) {
 	const file = plugin.app.workspace.getActiveFile();
 	if (!file) {
-		new Notice("没有活动文件。");
+		new Notice(t("notices.noActiveFile"));
 		return;
 	}
 	new ProcessWizardModal(plugin, file).open();
@@ -51,7 +52,7 @@ export async function processCurrentNote(plugin: ZkWorkflowWizardPlugin) {
 export async function assignZkIdCurrentNote(plugin: ZkWorkflowWizardPlugin) {
 	const file = plugin.app.workspace.getActiveFile();
 	if (!file) {
-		new Notice("没有活动文件。");
+		new Notice(t("notices.noActiveFile"));
 		return;
 	}
 	new AssignZkIdModal(plugin, file).open();

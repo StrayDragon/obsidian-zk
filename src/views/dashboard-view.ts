@@ -1,5 +1,6 @@
 import {ItemView, Setting, TFile, type WorkspaceLeaf} from "obsidian";
 import type ZkWorkflowWizardPlugin from "../main";
+import {t} from "../i18n";
 import {InboxModal} from "../ui/inbox-modal";
 import {ProcessWizardModal} from "../ui/process-wizard-modal";
 import {AssignZkIdModal} from "../ui/assign-zk-id-modal";
@@ -38,7 +39,7 @@ export class ZkDashboardView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "Zk 概览（dashboard）";
+		return t("commands.openDashboard");
 	}
 
 	getIcon(): string {
@@ -118,15 +119,16 @@ export class ZkDashboardView extends ItemView {
 		this.contentEl.addClass("zk-dashboard");
 
 		const header = this.contentEl.createDiv({cls: "zk-dashboard-header"});
-		header.createEl("h2", {text: "Zk 概览（dashboard）"});
+		header.createEl("h2", {text: t("commands.openDashboard")});
 		const headerRight = header.createDiv({cls: "zk-dashboard-headerRight"});
+		const updatedText = t("views.dashboard.updatedAt", {time: new Date().toLocaleTimeString()});
 		headerRight.createDiv({
 			cls: "zk-dashboard-updated",
-			text: `最后更新：${new Date().toLocaleTimeString()}`,
+			text: updatedText,
 		});
 		const refreshButton = headerRight.createEl("button", {
 			cls: "zk-dashboard-btn",
-			text: "刷新",
+			text: t("common.refresh"),
 			attr: {type: "button"},
 		});
 		refreshButton.addEventListener("click", () => void this.render());
@@ -145,38 +147,46 @@ export class ZkDashboardView extends ItemView {
 		const duplicateIdGroups = index.getDuplicateZkIdGroups();
 
 		const headline = this.contentEl.createDiv({cls: "zk-dashboard-headline"});
-		headline.createEl("div", {text: `Zk 笔记：${zkNotes.length} 条`});
+		headline.createEl("div", {text: t("views.dashboard.notesCount", {count: zkNotes.length})});
 
 		const quick = this.contentEl.createDiv({cls: "zk-dashboard-actions"});
 		new Setting(quick)
-			.setName("快捷操作")
+			.setName(t("views.dashboard.quickActions"))
 			.addButton((btn) =>
-				btn.setButtonText(`打开${getZkStatusLabel("inbox")}`).onClick(() => {
-					new InboxModal(this.plugin).open();
-				}),
+				btn
+					.setButtonText(t("views.dashboard.action.openInbox", {inbox: getZkStatusLabel("inbox")}))
+					.onClick(() => {
+						new InboxModal(this.plugin).open();
+					}),
 			)
 			.addButton((btn) =>
-				btn.setButtonText(`处理下一条 · ${getZkStatusLabel("inbox")}`).onClick(() => {
-					const first = index.getInboxItems()[0]?.file;
-					if (!first) return;
-					new ProcessWizardModal(this.plugin, first).open();
-				}),
+				btn
+					.setButtonText(t("views.dashboard.action.processNext", {inbox: getZkStatusLabel("inbox")}))
+					.onClick(() => {
+						const first = index.getInboxItems()[0]?.file;
+						if (!first) return;
+						new ProcessWizardModal(this.plugin, first).open();
+					}),
 			)
 			.addButton((btn) =>
-				btn.setButtonText(`处理当前笔记 · 升级为${getZkTypeLabel("permanent")}`).onClick(() => {
-					const file = this.plugin.app.workspace.getActiveFile();
-					if (!file) return;
-					new ProcessWizardModal(this.plugin, file).open();
-				}),
+				btn
+					.setButtonText(
+						t("views.dashboard.action.processCurrent", {permanent: getZkTypeLabel("permanent")}),
+					)
+					.onClick(() => {
+						const file = this.plugin.app.workspace.getActiveFile();
+						if (!file) return;
+						new ProcessWizardModal(this.plugin, file).open();
+					}),
 			);
 
-		this.contentEl.createEl("h3", {text: "统计"});
+		this.contentEl.createEl("h3", {text: t("views.dashboard.section.stats")});
 
 		const statsGrid = this.contentEl.createDiv({cls: "zk-dashboard-grid"});
 		this.createCard(statsGrid, {
 			title: getZkStatusLabel("inbox"),
 			value: String(byStatus.inbox ?? 0),
-			subtitle: "点击查看列表",
+			subtitle: t("views.dashboard.subtitle.clickToViewList"),
 			onClick: () => this.showPanel("inbox"),
 		});
 		this.createCard(statsGrid, {title: getZkTypeLabel("permanent"), value: String(byType.permanent ?? 0)});
@@ -184,32 +194,38 @@ export class ZkDashboardView extends ItemView {
 		this.createCard(statsGrid, {title: getZkTypeLabel("fleeting"), value: String(byType.fleeting ?? 0)});
 		this.createCard(statsGrid, {title: getZkStatusLabel("archived"), value: String(byStatus.archived ?? 0)});
 
-		this.contentEl.createEl("h3", {text: "数据健康"});
+		this.contentEl.createEl("h3", {text: t("views.dashboard.section.health")});
 
 		const healthGrid = this.contentEl.createDiv({cls: "zk-dashboard-grid"});
 		this.createCard(healthGrid, {
-			title: `${getZkTypeLabel("permanent")}缺${getZkFieldLabel("id")}`,
+			title: t("views.dashboard.health.missingId.title", {
+				permanent: getZkTypeLabel("permanent"),
+				idField: getZkFieldLabel("id"),
+			}),
 			value: String(permanentMissingId.length),
-			subtitle: "点击查看列表",
+			subtitle: t("views.dashboard.subtitle.clickToViewList"),
 			mod: permanentMissingId.length > 0 ? "warning" : undefined,
 			onClick: () => this.showPanel("missing-id"),
 		});
 		this.createCard(healthGrid, {
-			title: `${getZkTypeLabel("literature")}缺${getZkFieldLabel("source")}`,
+			title: t("views.dashboard.health.missingSource.title", {
+				literature: getZkTypeLabel("literature"),
+				sourceField: getZkFieldLabel("source"),
+			}),
 			value: String(literatureMissingSource.length),
-			subtitle: "点击查看列表",
+			subtitle: t("views.dashboard.subtitle.clickToViewList"),
 			mod: literatureMissingSource.length > 0 ? "warning" : undefined,
 			onClick: () => this.showPanel("missing-source"),
 		});
 		this.createCard(healthGrid, {
-			title: `${getZkFieldLabel("id")}冲突组数`,
+			title: t("views.dashboard.health.duplicateIds.title", {idField: getZkFieldLabel("id")}),
 			value: String(duplicateIdGroups.length),
-			subtitle: "点击查看冲突组",
+			subtitle: t("views.dashboard.subtitle.clickToViewConflicts"),
 			mod: duplicateIdGroups.length > 0 ? "danger" : undefined,
 			onClick: () => this.showPanel("duplicate-ids"),
 		});
 
-		this.contentEl.createEl("h3", {text: "列表"});
+		this.contentEl.createEl("h3", {text: t("views.dashboard.section.lists")});
 
 		const panels = this.contentEl.createDiv({cls: "zk-dashboard-panels"});
 		const panelEls: Partial<Record<ZkDashboardPanel, HTMLDetailsElement>> = {};
@@ -217,57 +233,78 @@ export class ZkDashboardView extends ItemView {
 		const inboxPanel = panels.createEl("details", {cls: "zk-dashboard-panel"});
 		panelEls["inbox"] = inboxPanel;
 		inboxPanel.createEl("summary", {
-			text: `${getZkStatusLabel("inbox")}：${byStatus.inbox ?? 0} 条`,
+			text: t("views.dashboard.panel.inbox.summary", {
+				inbox: getZkStatusLabel("inbox"),
+				count: byStatus.inbox ?? 0,
+			}),
 		});
 		inboxPanel.open = this.activePanel === "inbox";
 		{
 			const content = inboxPanel.createDiv({cls: "zk-dashboard-panelBody"});
 			const inboxItems = index.getInboxItems();
 			if (inboxItems.length === 0) {
-				content.createEl("p", {text: `${getZkStatusLabel("inbox")}为空。`});
+				content.createEl("p", {
+					text: t("notices.queueEmpty", {queue: getZkStatusLabel("inbox")}),
+				});
 			} else {
 				for (const note of inboxItems.slice(0, 20)) {
 					new Setting(content)
 						.setName(note.file.basename)
 						.setDesc(note.file.path)
-						.addButton((btn) => btn.setButtonText("打开").onClick(() => openFile(this.plugin, note.file)))
 						.addButton((btn) =>
-							btn.setButtonText("处理").onClick(() => new ProcessWizardModal(this.plugin, note.file).open()),
+							btn.setButtonText(t("common.open")).onClick(() => openFile(this.plugin, note.file)),
+						)
+						.addButton((btn) =>
+							btn
+								.setButtonText(t("common.process"))
+								.onClick(() => new ProcessWizardModal(this.plugin, note.file).open()),
 						);
 				}
 				if (inboxItems.length > 20) {
-					content.createEl("p", {text: "仅显示前 20 条。"});
+					content.createEl("p", {text: t("views.dashboard.panel.showingFirstItems", {count: 20})});
 				}
 			}
 			new Setting(content).addButton((btn) =>
-				btn.setButtonText(`打开${getZkStatusLabel("inbox")}`).onClick(() => new InboxModal(this.plugin).open()),
+				btn
+					.setButtonText(t("views.dashboard.action.openInbox", {inbox: getZkStatusLabel("inbox")}))
+					.onClick(() => new InboxModal(this.plugin).open()),
 			);
 		}
 
 		const missingIdPanel = panels.createEl("details", {cls: "zk-dashboard-panel"});
 		panelEls["missing-id"] = missingIdPanel;
 		missingIdPanel.createEl("summary", {
-			text: `${getZkTypeLabel("permanent")}缺${getZkFieldLabel("id")}：${permanentMissingId.length} 条`,
+			text: t("views.dashboard.panel.missingId.summary", {
+				permanent: getZkTypeLabel("permanent"),
+				idField: getZkFieldLabel("id"),
+				count: permanentMissingId.length,
+			}),
 		});
 		missingIdPanel.open = this.activePanel === "missing-id";
 		{
 			const content = missingIdPanel.createDiv({cls: "zk-dashboard-panelBody"});
-			content.createEl("p", {text: `提示：点击打开，或直接分配${getZkFieldLabel("id")}。`});
+			content.createEl("p", {
+				text: t("views.dashboard.panel.missingId.tip", {idField: getZkFieldLabel("id")}),
+			});
 
 			if (permanentMissingId.length === 0) {
-				content.createEl("p", {text: "没有发现问题。"});
+				content.createEl("p", {text: t("views.dashboard.noIssues")});
 			} else {
 				for (const note of permanentMissingId.slice(0, 20)) {
 					new Setting(content)
 						.setName(note.file.basename)
 						.setDesc(note.file.path)
-						.addButton((btn) => btn.setButtonText("打开").onClick(() => openFile(this.plugin, note.file)))
 						.addButton((btn) =>
-							btn.setButtonText("分配").onClick(() => new AssignZkIdModal(this.plugin, note.file).open()),
+							btn.setButtonText(t("common.open")).onClick(() => openFile(this.plugin, note.file)),
+						)
+						.addButton((btn) =>
+							btn
+								.setButtonText(t("common.assign"))
+								.onClick(() => new AssignZkIdModal(this.plugin, note.file).open()),
 						);
 				}
 				if (permanentMissingId.length > 20) {
-					content.createEl("p", {text: "仅显示前 20 条。"});
+					content.createEl("p", {text: t("views.dashboard.panel.showingFirstItems", {count: 20})});
 				}
 			}
 		}
@@ -275,26 +312,35 @@ export class ZkDashboardView extends ItemView {
 		const missingSourcePanel = panels.createEl("details", {cls: "zk-dashboard-panel"});
 		panelEls["missing-source"] = missingSourcePanel;
 		missingSourcePanel.createEl("summary", {
-			text: `${getZkTypeLabel("literature")}缺${getZkFieldLabel("source")}：${literatureMissingSource.length} 条`,
+			text: t("views.dashboard.panel.missingSource.summary", {
+				literature: getZkTypeLabel("literature"),
+				sourceField: getZkFieldLabel("source"),
+				count: literatureMissingSource.length,
+			}),
 		});
 		missingSourcePanel.open = this.activePanel === "missing-source";
 		{
 			const content = missingSourcePanel.createDiv({cls: "zk-dashboard-panelBody"});
 			content.createEl("p", {
-				text: `建议：为${getZkTypeLabel("literature")}补齐${getZkFieldLabel("source")}，方便后续检索与召回。`,
+				text: t("views.dashboard.panel.missingSource.tip", {
+					literature: getZkTypeLabel("literature"),
+					sourceField: getZkFieldLabel("source"),
+				}),
 			});
 
 			if (literatureMissingSource.length === 0) {
-				content.createEl("p", {text: "没有发现问题。"});
+				content.createEl("p", {text: t("views.dashboard.noIssues")});
 			} else {
 				for (const note of literatureMissingSource.slice(0, 20)) {
 					new Setting(content)
 						.setName(note.file.basename)
 						.setDesc(note.file.path)
-						.addButton((btn) => btn.setButtonText("打开").onClick(() => openFile(this.plugin, note.file)));
+						.addButton((btn) =>
+							btn.setButtonText(t("common.open")).onClick(() => openFile(this.plugin, note.file)),
+						);
 				}
 				if (literatureMissingSource.length > 20) {
-					content.createEl("p", {text: "仅显示前 20 条。"});
+					content.createEl("p", {text: t("views.dashboard.panel.showingFirstItems", {count: 20})});
 				}
 			}
 		}
@@ -302,28 +348,41 @@ export class ZkDashboardView extends ItemView {
 		const duplicateIdsPanel = panels.createEl("details", {cls: "zk-dashboard-panel"});
 		panelEls["duplicate-ids"] = duplicateIdsPanel;
 		duplicateIdsPanel.createEl("summary", {
-			text: `${getZkFieldLabel("id")}冲突：${duplicateIdGroups.length} 组`,
+			text: t("views.dashboard.panel.duplicateIds.summary", {
+				idField: getZkFieldLabel("id"),
+				count: duplicateIdGroups.length,
+			}),
 		});
 		duplicateIdsPanel.open = this.activePanel === "duplicate-ids";
 		{
 			const content = duplicateIdsPanel.createDiv({cls: "zk-dashboard-panelBody"});
-			content.createEl("p", {text: `同一${getZkFieldLabel("id")}被多个文件使用会影响链式组织与召回。`});
+			content.createEl("p", {
+				text: t("views.dashboard.panel.duplicateIds.tip", {idField: getZkFieldLabel("id")}),
+			});
 
 			if (duplicateIdGroups.length === 0) {
-				content.createEl("p", {text: "没有发现问题。"});
+				content.createEl("p", {text: t("views.dashboard.noIssues")});
 			} else {
 				for (const group of duplicateIdGroups.slice(0, 20)) {
 					const groupEl = content.createEl("details");
-					groupEl.createEl("summary", {text: `${getZkFieldLabel("id")}：${group.zkId}（${group.files.length}）`});
+					groupEl.createEl("summary", {
+						text: t("views.dashboard.panel.duplicateIds.groupSummary", {
+							idField: getZkFieldLabel("id"),
+							zkId: group.zkId,
+							count: group.files.length,
+						}),
+					});
 					for (const file of group.files) {
 						new Setting(groupEl)
 							.setName(file.basename)
 							.setDesc(file.path)
-							.addButton((btn) => btn.setButtonText("打开").onClick(() => openFile(this.plugin, file)));
+							.addButton((btn) =>
+								btn.setButtonText(t("common.open")).onClick(() => openFile(this.plugin, file)),
+							);
 					}
 				}
 				if (duplicateIdGroups.length > 20) {
-					content.createEl("p", {text: "仅显示前 20 组。"});
+					content.createEl("p", {text: t("views.dashboard.panel.showingFirstGroups", {count: 20})});
 				}
 			}
 		}

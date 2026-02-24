@@ -1,4 +1,5 @@
 import {FuzzySuggestModal, TFile} from "obsidian";
+import {t} from "../../i18n";
 
 export class FileSuggestModal extends FuzzySuggestModal<TFile> {
 	constructor(
@@ -8,8 +9,8 @@ export class FileSuggestModal extends FuzzySuggestModal<TFile> {
 		options?: {placeholder?: string; emptyStateText?: string},
 	) {
 		super(app);
-		this.setPlaceholder(options?.placeholder ?? "搜索文件…");
-		this.emptyStateText = options?.emptyStateText ?? "没有匹配结果";
+		this.setPlaceholder(options?.placeholder ?? t("suggest.file.placeholder"));
+		this.emptyStateText = options?.emptyStateText ?? t("suggest.file.empty");
 	}
 
 	getItems(): TFile[] {
@@ -29,4 +30,3 @@ export class FileSuggestModal extends FuzzySuggestModal<TFile> {
 		el.createEl("small", {text: item.item.path});
 	}
 }
-

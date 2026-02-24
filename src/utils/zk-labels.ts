@@ -1,18 +1,19 @@
 import type {ZkStatus, ZkType} from "../model/zk";
 import {ZK_FRONTMATTER_KEYS} from "../model/zk";
+import {t} from "../i18n";
 
 type Unknown = "unknown";
 
 export function getZkFieldLabel(key: keyof typeof ZK_FRONTMATTER_KEYS): string {
 	switch (key) {
 		case "type":
-			return `类型（${ZK_FRONTMATTER_KEYS.type}）`;
+			return t("labels.field.type");
 		case "status":
-			return `状态（${ZK_FRONTMATTER_KEYS.status}）`;
+			return t("labels.field.status");
 		case "id":
-			return `卡片 ID（${ZK_FRONTMATTER_KEYS.id}）`;
+			return t("labels.field.id");
 		case "source":
-			return `来源（${ZK_FRONTMATTER_KEYS.source}）`;
+			return t("labels.field.source");
 		default: {
 			const _exhaustive: never = key;
 			return _exhaustive;
@@ -23,16 +24,16 @@ export function getZkFieldLabel(key: keyof typeof ZK_FRONTMATTER_KEYS): string {
 export function getZkStatusLabel(status?: ZkStatus | Unknown): string {
 	switch (status) {
 		case "inbox":
-			return "收集箱（inbox）";
+			return t("labels.zkStatus.inbox");
 		case "processing":
-			return "处理中（processing）";
+			return t("labels.zkStatus.processing");
 		case "done":
-			return "已完成（done）";
+			return t("labels.zkStatus.done");
 		case "archived":
-			return "已归档（archived）";
+			return t("labels.zkStatus.archived");
 		case "unknown":
 		case undefined:
-			return "未标记（unknown）";
+			return t("labels.zkStatus.unknown");
 		default: {
 			const _exhaustive: never = status;
 			return _exhaustive;
@@ -43,22 +44,21 @@ export function getZkStatusLabel(status?: ZkStatus | Unknown): string {
 export function getZkTypeLabel(type?: ZkType | Unknown): string {
 	switch (type) {
 		case "fleeting":
-			return "闪念笔记（fleeting）";
+			return t("labels.zkType.fleeting");
 		case "literature":
-			return "文献笔记（literature）";
+			return t("labels.zkType.literature");
 		case "permanent":
-			return "永久笔记（permanent）";
+			return t("labels.zkType.permanent");
 		case "index":
-			return "索引笔记（index）";
+			return t("labels.zkType.index");
 		case "project":
-			return "项目笔记（project）";
+			return t("labels.zkType.project");
 		case "unknown":
 		case undefined:
-			return "未标记（unknown）";
+			return t("labels.zkType.unknown");
 		default: {
 			const _exhaustive: never = type;
 			return _exhaustive;
 		}
 	}
 }
-

@@ -1,5 +1,6 @@
 import {ItemView, Setting, type TFile, type WorkspaceLeaf} from "obsidian";
 import type ZkWorkflowWizardPlugin from "../main";
+import {t} from "../i18n";
 import {getEffectiveZkStatus, getEffectiveZkType, getUserTags} from "../services/zk-classify";
 import {getZkFieldLabel, getZkStatusLabel, getZkTypeLabel} from "../utils/zk-labels";
 import {
@@ -48,14 +49,25 @@ function isZkRelevant(note: ZkIndexedNote): boolean {
 
 function buildEntryDesc(entry: LibraryEntry<TFile>): string {
 	const parts: string[] = [];
-	if (entry.zkId) parts.push(`${getZkFieldLabel("id")}：${entry.zkId}`);
-	if (entry.zkSource) parts.push(`${getZkFieldLabel("source")}：${entry.zkSource}`);
+	if (entry.zkId) {
+		parts.push(
+			t("views.libraryIndex.entry.idPart", {idField: getZkFieldLabel("id"), id: entry.zkId}),
+		);
+	}
+	if (entry.zkSource) {
+		parts.push(
+			t("views.libraryIndex.entry.sourcePart", {
+				sourceField: getZkFieldLabel("source"),
+				source: entry.zkSource,
+			}),
+		);
+	}
 	if (entry.userTags.length > 0) {
 		const preview = entry.userTags.slice(0, 3).map((t) => `#${t}`).join(" ");
 		parts.push(preview);
 	}
 	parts.push(entry.path);
-	return parts.join(" · ");
+	return parts.join(t("common.separator.dot"));
 }
 
 function toTypeFilter(value: string): LibraryTypeFilter {
@@ -114,7 +126,7 @@ export class ZkLibraryIndexView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "图书馆索引（library index）";
+		return t("commands.openLibraryIndex");
 	}
 
 	getIcon(): string {
@@ -155,28 +167,31 @@ export class ZkLibraryIndexView extends ItemView {
 
 	private buildSkeleton() {
 		const header = this.contentEl.createDiv({cls: "zk-library-header"});
-		header.createEl("h2", {text: "图书馆索引（library index）"});
+		header.createEl("h2", {text: t("commands.openLibraryIndex")});
 
 		const headerRight = header.createDiv({cls: "zk-library-headerRight"});
 		this.updatedEl = headerRight.createDiv({cls: "zk-library-updated"});
 
 		const refreshButton = headerRight.createEl("button", {
 			cls: "zk-library-btn",
-			text: "刷新",
-			attr: {type: "button", "aria-label": "刷新"},
+			text: t("common.refresh"),
+			attr: {type: "button", "aria-label": t("common.refresh")},
 		});
 		refreshButton.addEventListener("click", () => this.scheduleRefresh(true));
 
 		const filters = this.contentEl.createDiv({cls: "zk-library-filters"});
 
 		const searchWrap = filters.createDiv({cls: "zk-library-filter is-search"});
-		searchWrap.createDiv({cls: "zk-library-filterLabel", text: "搜索"});
+		searchWrap.createDiv({cls: "zk-library-filterLabel", text: t("views.libraryIndex.filters.searchLabel")});
 		this.searchInput = searchWrap.createEl("input", {
 			cls: "zk-library-input",
 			attr: {
 				type: "search",
-				placeholder: `搜索文件名、${getZkFieldLabel("id")}、${getZkFieldLabel("source")}或标签（tags）…`,
-				"aria-label": "搜索",
+				placeholder: t("views.libraryIndex.filters.searchPlaceholder", {
+					idField: getZkFieldLabel("id"),
+					sourceField: getZkFieldLabel("source"),
+				}),
+				"aria-label": t("views.libraryIndex.filters.searchAria"),
 			},
 		});
 		this.searchInput.addEventListener("input", () => {
@@ -188,10 +203,10 @@ export class ZkLibraryIndexView extends ItemView {
 		typeWrap.createDiv({cls: "zk-library-filterLabel", text: getZkFieldLabel("type")});
 		this.typeSelect = typeWrap.createEl("select", {
 			cls: "zk-library-select",
-			attr: {"aria-label": "类型"},
+			attr: {"aria-label": t("views.libraryIndex.filters.typeAria")},
 		});
 		const typeOptions: Array<{value: string; label: string}> = [
-			{value: "all", label: "全部"},
+			{value: "all", label: t("common.all")},
 			{value: "permanent", label: getZkTypeLabel("permanent")},
 			{value: "literature", label: getZkTypeLabel("literature")},
 			{value: "fleeting", label: getZkTypeLabel("fleeting")},
@@ -211,10 +226,10 @@ export class ZkLibraryIndexView extends ItemView {
 		statusWrap.createDiv({cls: "zk-library-filterLabel", text: getZkFieldLabel("status")});
 		this.statusSelect = statusWrap.createEl("select", {
 			cls: "zk-library-select",
-			attr: {"aria-label": "状态"},
+			attr: {"aria-label": t("views.libraryIndex.filters.statusAria")},
 		});
 		const statusOptions: Array<{value: string; label: string}> = [
-			{value: "all", label: "全部"},
+			{value: "all", label: t("common.all")},
 			{value: "inbox", label: getZkStatusLabel("inbox")},
 			{value: "processing", label: getZkStatusLabel("processing")},
 			{value: "done", label: getZkStatusLabel("done")},
@@ -230,12 +245,12 @@ export class ZkLibraryIndexView extends ItemView {
 		});
 
 		const tagWrap = filters.createDiv({cls: "zk-library-filter"});
-		tagWrap.createDiv({cls: "zk-library-filterLabel", text: "标签（tags）"});
+		tagWrap.createDiv({cls: "zk-library-filterLabel", text: t("views.libraryIndex.filters.tagLabel")});
 		this.tagSelect = tagWrap.createEl("select", {
 			cls: "zk-library-select",
-			attr: {"aria-label": "标签"},
+			attr: {"aria-label": t("views.libraryIndex.filters.tagAria")},
 		});
-		this.tagSelect.createEl("option", {value: "all", text: "全部标签（tags）"});
+		this.tagSelect.createEl("option", {value: "all", text: t("views.libraryIndex.tagOption.all")});
 		this.tagSelect.addEventListener("change", () => {
 			const value = this.tagSelect?.value ?? "all";
 			this.tagFilter = value === "all" ? undefined : value;
@@ -244,8 +259,8 @@ export class ZkLibraryIndexView extends ItemView {
 
 		const resetButton = filters.createEl("button", {
 			cls: "zk-library-btn is-reset",
-			text: "重置",
-			attr: {type: "button", "aria-label": "重置筛选"},
+			text: t("common.reset"),
+			attr: {type: "button", "aria-label": t("common.resetFiltersAria")},
 		});
 		resetButton.addEventListener("click", () => {
 			this.query = "";
@@ -310,7 +325,7 @@ export class ZkLibraryIndexView extends ItemView {
 		});
 
 		if (this.updatedEl) {
-			this.updatedEl.setText(`最后更新：${new Date().toLocaleTimeString()}`);
+			this.updatedEl.setText(t("views.libraryIndex.updatedAt", {time: new Date().toLocaleTimeString()}));
 		}
 	}
 
@@ -341,11 +356,11 @@ export class ZkLibraryIndexView extends ItemView {
 			tag: this.tagFilter,
 		});
 
-		matchEl.setText(`匹配 ${filtered.length} / 总计 ${total}`);
+		matchEl.setText(t("views.libraryIndex.match", {matched: filtered.length, total}));
 
 		resultsEl.empty();
 		if (filtered.length === 0) {
-			resultsEl.createEl("p", {text: "没有匹配的笔记。"});
+			resultsEl.createEl("p", {text: t("views.libraryIndex.empty")});
 			return;
 		}
 
@@ -365,9 +380,21 @@ export class ZkLibraryIndexView extends ItemView {
 			});
 
 			const inboxCount = groupEntries.filter((e) => e.effectiveStatus === "inbox").length;
-			const summaryParts = [`${getZkTypeLabel(groupType)}（${groupEntries.length}）`];
-			if (inboxCount > 0) summaryParts.push(`${getZkStatusLabel("inbox")} ${inboxCount}`);
-			details.createEl("summary", {text: summaryParts.join(" · ")});
+			const summaryParts = [
+				t("views.libraryIndex.group.typePart", {
+					typeLabel: getZkTypeLabel(groupType),
+					count: groupEntries.length,
+				}),
+			];
+			if (inboxCount > 0) {
+				summaryParts.push(
+					t("views.libraryIndex.group.inboxPart", {
+						inboxLabel: getZkStatusLabel("inbox"),
+						count: inboxCount,
+					}),
+				);
+			}
+			details.createEl("summary", {text: summaryParts.join(t("common.separator.dot"))});
 
 			const body = details.createDiv({cls: "zk-library-groupBody"});
 			const limit = this.limitByType.get(groupType) ?? DEFAULT_PER_TYPE_LIMIT;
@@ -376,17 +403,23 @@ export class ZkLibraryIndexView extends ItemView {
 			for (const entry of visible) {
 				const setting = new Setting(body).setName(entry.basename).setDesc(buildEntryDesc(entry));
 
-				setting.addButton((btn) => btn.setButtonText("打开").onClick(() => openFile(this.plugin, entry.file)));
+				setting.addButton((btn) =>
+					btn.setButtonText(t("common.open")).onClick(() => openFile(this.plugin, entry.file)),
+				);
 
 				if (entry.effectiveStatus === "inbox") {
 					setting.addButton((btn) =>
-						btn.setButtonText("处理").onClick(() => new ProcessWizardModal(this.plugin, entry.file).open()),
+						btn
+							.setButtonText(t("common.process"))
+							.onClick(() => new ProcessWizardModal(this.plugin, entry.file).open()),
 					);
 				}
 
 				if (entry.effectiveType === "permanent" && !entry.zkId) {
 					setting.addButton((btn) =>
-						btn.setButtonText("分配").onClick(() => new AssignZkIdModal(this.plugin, entry.file).open()),
+						btn
+							.setButtonText(t("common.assign"))
+							.onClick(() => new AssignZkIdModal(this.plugin, entry.file).open()),
 					);
 				}
 			}
@@ -394,7 +427,7 @@ export class ZkLibraryIndexView extends ItemView {
 			if (groupEntries.length > limit) {
 				const moreButton = body.createEl("button", {
 					cls: "zk-library-more",
-					text: "显示更多",
+					text: t("common.showMore"),
 					attr: {type: "button"},
 				});
 				moreButton.addEventListener("click", () => {
@@ -415,7 +448,7 @@ export class ZkLibraryIndexView extends ItemView {
 		const selectedCount = selected === "all" ? undefined : tagCounts.find((t) => t.tag === selected)?.count ?? 0;
 
 		this.tagSelect.empty();
-		this.tagSelect.createEl("option", {value: "all", text: "全部标签（tags）"});
+		this.tagSelect.createEl("option", {value: "all", text: t("views.libraryIndex.tagOption.all")});
 		for (const {tag, count} of top) {
 			this.tagSelect.createEl("option", {value: tag, text: `${tag}（${count}）`});
 		}
@@ -438,7 +471,7 @@ export class ZkLibraryIndexView extends ItemView {
 			const active = this.tagFilter === tag;
 			const btn = this.chipsEl.createEl("button", {
 				cls: ["zk-library-chip", active ? "is-active" : ""].filter(Boolean),
-				attr: {type: "button", "aria-label": `筛选标签 ${tag}`},
+				attr: {type: "button", "aria-label": t("views.libraryIndex.chip.ariaLabel", {tag})},
 			});
 			btn.createSpan({text: `#${tag}`});
 			btn.createSpan({cls: "zk-library-chipCount", text: String(count)});

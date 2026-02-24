@@ -1,5 +1,6 @@
 import {getAllTags, TFile} from "obsidian";
 import type ZkWorkflowWizardPlugin from "../main";
+import {t} from "../i18n";
 import {ZK_FRONTMATTER_KEYS, type ZkStatus, type ZkType} from "../model/zk";
 
 export interface ZkIndexedNote {
@@ -153,7 +154,7 @@ export class ZkIndex {
 
 			if (currentSource && note.zkSource && note.zkSource === currentSource) {
 				score += 10;
-				reasons.push("同来源");
+				reasons.push(t("suggestions.related.sameSource"));
 			}
 
 			const sharedTags: string[] = [];
@@ -163,13 +164,18 @@ export class ZkIndex {
 			}
 			if (sharedTags.length > 0) {
 				score += Math.min(5, sharedTags.length);
-				reasons.push(`共享标签: ${sharedTags.slice(0, 3).join(", ")}${sharedTags.length > 3 ? "…" : ""}`);
+				reasons.push(
+					t("suggestions.related.sharedTags", {
+						tags: sharedTags.slice(0, 3).join(", "),
+						ellipsis: sharedTags.length > 3 ? "…" : "",
+					}),
+				);
 			}
 
 			if (score > 0) {
 				suggestions.push({
 					file: note.file,
-					reason: reasons.join("；"),
+					reason: reasons.join(t("suggestions.related.joiner")),
 					score,
 				});
 			}

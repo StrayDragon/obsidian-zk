@@ -1,5 +1,6 @@
 import {App, PluginSettingTab, Setting} from "obsidian";
 import ZkWorkflowWizardPlugin from "./main";
+import {t} from "./i18n";
 import {getZkFieldLabel, getZkStatusLabel, getZkTypeLabel} from "./utils/zk-labels";
 
 export interface ZkPluginSettings {
@@ -26,11 +27,11 @@ export class ZkSettingTab extends PluginSettingTab {
 		const {containerEl} = this;
 		containerEl.empty();
 
-		new Setting(containerEl).setName("工作流设置").setHeading();
+		new Setting(containerEl).setName(t("settings.workflow.heading")).setHeading();
 
 		new Setting(containerEl)
-			.setName("关联章节标题")
-			.setDesc("插件会把相关双向链接写入该标题下，例如“## 关联”。")
+			.setName(t("settings.relatedSectionHeading.name"))
+			.setDesc(t("settings.relatedSectionHeading.desc"))
 			.addText((text) =>
 				text
 					.setPlaceholder(DEFAULT_SETTINGS.relatedSectionHeading)
@@ -43,9 +44,14 @@ export class ZkSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("写入 zk/* 标签")
+			.setName(t("settings.writeZkTags.name"))
 			.setDesc(
-				`启用后创建/处理笔记时会写入辅助标签（例如 #zk/inbox 对应 ${getZkFieldLabel("status")} = ${getZkStatusLabel("inbox")}；#zk/permanent 对应 ${getZkFieldLabel("type")} = ${getZkTypeLabel("permanent")}）。`,
+				t("settings.writeZkTags.desc", {
+					statusField: getZkFieldLabel("status"),
+					inboxStatus: getZkStatusLabel("inbox"),
+					typeField: getZkFieldLabel("type"),
+					permanentType: getZkTypeLabel("permanent"),
+				}),
 			)
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.writeZkTags).onChange(async (value) => {
@@ -55,16 +61,16 @@ export class ZkSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("候选建议数量上限")
-			.setDesc("相关卡片建议的最大条数（建议 10–50）。")
-				.addText((text) =>
-					text.setValue(String(this.plugin.settings.suggestionsLimit)).onChange(async (value) => {
-						const asNumber = Number.parseInt(value, 10);
-						this.plugin.settings.suggestionsLimit = Number.isFinite(asNumber)
+			.setName(t("settings.suggestionsLimit.name"))
+			.setDesc(t("settings.suggestionsLimit.desc"))
+			.addText((text) =>
+				text.setValue(String(this.plugin.settings.suggestionsLimit)).onChange(async (value) => {
+					const asNumber = Number.parseInt(value, 10);
+					this.plugin.settings.suggestionsLimit = Number.isFinite(asNumber)
 						? Math.max(1, asNumber)
 						: DEFAULT_SETTINGS.suggestionsLimit;
 					await this.plugin.saveSettings();
-					}),
-				);
+				}),
+			);
 	}
 }
